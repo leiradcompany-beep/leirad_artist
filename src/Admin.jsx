@@ -42,16 +42,22 @@ function Login({ setToken }) {
         e.preventDefault();
         setIsLoading(true);
         try {
-            const data = await fetchApi('login_test', password);
-            if (data.success) {
-                setToken(password);
+            const formData = new FormData();
+            formData.append('password', password);
+            const res = await fetch(`${API_BASE_URL}/admin_api.php?action=login`, {
+                method: 'POST',
+                body: formData
+            }).then(r => r.json());
+
+            if (res.success && res.token) {
+                setToken(res.token);
                 toast.success('Logged in successfully!');
             } else {
                 toast.error('Invalid password');
                 setIsLoading(false);
             }
         } catch (err) {
-            toast.error('Login failed');
+            toast.error('Login failed. Ensure backend api is updated.');
             setIsLoading(false);
         }
     };
@@ -529,7 +535,12 @@ export default function AdminApp() {
         setToken(t);
     };
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        if (token) {
+            try {
+                await fetchApi('logout', token, { method: 'POST' });
+            } catch(e) {}
+        }
         localStorage.removeItem('admin_token');
         setToken('');
         toast.success('Logged out successfully');
