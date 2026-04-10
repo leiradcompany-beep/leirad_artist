@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation, Link } from 'react-router-dom';
+import { Turnstile } from '@marsidev/react-turnstile';
 import toast, { Toaster } from 'react-hot-toast';
 import { 
     LayoutDashboard, LogOut, Plus, Edit2, Trash2, Share2, 
@@ -25,6 +26,7 @@ function Login({ setToken }) {
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [bgUrl, setBgUrl] = useState('');
+    const [turnstileToken, setTurnstileToken] = useState('');
 
     useEffect(() => {
         // Fetch public homepage info for the background image
@@ -40,10 +42,16 @@ function Login({ setToken }) {
 
     const handleLogin = async (e) => {
         e.preventDefault();
+        if (!turnstileToken) {
+            toast.error('Please complete the security check.');
+            return;
+        }
+
         setIsLoading(true);
         try {
             const formData = new FormData();
             formData.append('password', password);
+            formData.append('turnstile_token', turnstileToken);
             const res = await fetch(`${API_BASE_URL}/admin_api.php?action=login`, {
                 method: 'POST',
                 body: formData
@@ -76,6 +84,13 @@ function Login({ setToken }) {
                 <p style={{textAlign:'center', color:'#a1a1aa', fontSize:14, marginBottom:25}}>Enter your master password to continue</p>
                 <form onSubmit={handleLogin}>
                     <input type="password" required autoComplete="current-password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password" style={{ width:'100%', padding:'12px 16px', borderRadius:'8px', border:'1px solid rgba(255,255,255,0.1)', background:'rgba(0,0,0,0.3)', color:'white', boxSizing:'border-box', marginBottom:20, fontSize:15, outline:'none' }} />
+                    <div style={{ marginBottom: 20, display: 'flex', justifyContent: 'center' }}>
+                        <Turnstile 
+                            siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY} 
+                            onSuccess={(token) => setTurnstileToken(token)} 
+                            options={{ theme: 'dark' }}
+                        />
+                    </div>
                     <button type="submit" style={{ width:'100%', padding:'12px', background:'#10b981', color:'#fff', border:'none', borderRadius:'8px', fontWeight:600, cursor:'pointer', fontSize:15, transition:'0.2s', boxShadow:'0 4px 12px rgba(16, 185, 129, 0.3)' }}>Log In</button>
                 </form>
             </div>
