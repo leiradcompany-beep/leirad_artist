@@ -61,11 +61,11 @@ function Login({ setToken }) {
                 setToken(res.token);
                 toast.success('Logged in successfully!');
             } else {
-                toast.error('Invalid password');
+                toast.error(res.error || 'Invalid password');
                 setIsLoading(false);
             }
         } catch (err) {
-            toast.error('Login failed. Ensure backend api is updated.');
+            toast.error('Login failed. Check backend configuration.');
             setIsLoading(false);
         }
     };
