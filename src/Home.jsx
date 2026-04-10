@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import Preloader from './Preloader.jsx';
 
 import { API_BASE_URL } from './config.js';
 
@@ -14,7 +15,7 @@ export default function Home() {
             .catch(() => {});
     }, []);
 
-    if (!data) return <div className="container not-found"><h1>Loading Portfolio...</h1></div>;
+    if (!data) return <Preloader />;
 
     const { data: home, releases } = data;
 

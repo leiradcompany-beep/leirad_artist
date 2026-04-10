@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import Home from './Home.jsx';
+import Preloader from './Preloader.jsx';
 import './index.css';
 import { FaSpotify, FaApple, FaYoutube, FaDeezer, FaSoundcloud, FaAmazon, FaMusic } from 'react-icons/fa';
 import { SiTidal } from 'react-icons/si';
@@ -49,11 +50,7 @@ function App() {
     if (!shortcode) return <Home />;
 
     if (loading) {
-        return (
-            <div className="container not-found">
-                <h1>Loading...</h1>
-            </div>
-        );
+        return <Preloader />;
     }
 
     if (error || !release) {
