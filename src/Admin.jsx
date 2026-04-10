@@ -61,6 +61,7 @@ function Login({ setToken }) {
                 setToken(res.token);
                 toast.success('Logged in successfully!');
             } else {
+                console.error("Login rejected by backend. Debug Data:", res);
                 toast.error(res.error || 'Invalid password');
                 setIsLoading(false);
             }
