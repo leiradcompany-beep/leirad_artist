@@ -79,10 +79,13 @@ function App() {
                         <div className="release-info">
                             <h1 className="artist-name">{release.artist}</h1>
                             <h2 className="title">{release.title}</h2>
-                            <p className="subtitle">Choose music service</p>
                         </div>
                     </>
                 )}
+
+                <div className="release-info" style={{ textAlign: 'center', marginBottom: '24px' }}>
+                    <p className="subtitle">Choose music service</p>
+                </div>
 
                 <div className="links-box">
                     {release.links.map((link, idx) => {
