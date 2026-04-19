@@ -70,18 +70,18 @@ function App() {
             ></div>
 
             <div className="container">
-                <img src={release.full_cover_url} alt="Cover Art" className="cover-art" />
-                
-                <div className="release-info">
-                    <h1 className="artist-name">{release.artist}</h1>
-                    <h2 className="title">{release.title}</h2>
-                    <p className="subtitle">Choose music service</p>
-                </div>
-
-                {release.spotify_embed && (
+                {release.spotify_embed ? (
                     <div className="spotify-embed" style={{ marginBottom: '24px' }}>
                         <div dangerouslySetInnerHTML={{ __html: release.spotify_embed }} />
                     </div>
+                ) : (
+                    <>
+                        <div className="release-info">
+                            <h1 className="artist-name">{release.artist}</h1>
+                            <h2 className="title">{release.title}</h2>
+                            <p className="subtitle">Choose music service</p>
+                        </div>
+                    </>
                 )}
 
                 <div className="links-box">
