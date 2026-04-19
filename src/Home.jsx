@@ -39,6 +39,110 @@ export default function Home() {
                     </a>
                 ))}
             </div>
+
+            {/* Footer Section */}
+            <footer style={{
+                position: 'relative',
+                zIndex: 10,
+                marginTop: 40,
+                borderTop: '1px solid rgba(255,255,255,0.1)',
+                background: 'rgba(0,0,0,0.3)',
+                backdropFilter: 'blur(20px)',
+                padding: '40px 20px 30px'
+            }}>
+                <div style={{
+                    maxWidth: 1000,
+                    margin: '0 auto',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                    gap: 40,
+                    marginBottom: 30
+                }}>
+                    {/* Brand Section */}
+                    <div>
+                        <h3 style={{
+                            fontSize: 20,
+                            fontWeight: 700,
+                            margin: '0 0 15px 0',
+                            color: '#fff',
+                            letterSpacing: 1
+                        }}>{home.artist_name}</h3>
+                        <p style={{
+                            fontSize: 14,
+                            color: 'rgba(255,255,255,0.6)',
+                            lineHeight: 1.6,
+                            margin: 0
+                        }}>{home.hero_subtitle || 'Official artist website. Listen to the latest releases on all major platforms.'}</p>
+                    </div>
+
+                    {/* Quick Links */}
+                    <div>
+                        <h4 style={{
+                            fontSize: 14,
+                            fontWeight: 600,
+                            margin: '0 0 15px 0',
+                            color: '#fff',
+                            textTransform: 'uppercase',
+                            letterSpacing: 1
+                        }}>Quick Links</h4>
+                        <div style={{display: 'flex', flexDirection: 'column', gap: 10}}>
+                            <a href="/" style={{
+                                color: 'rgba(255,255,255,0.6)',
+                                textDecoration: 'none',
+                                fontSize: 14,
+                                transition: '0.2s'
+                            }}
+                            onMouseOver={e => e.currentTarget.style.color = '#fff'}
+                            onMouseOut={e => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}
+                            >Home</a>
+                            {releases && releases.slice(0, 3).map(r => (
+                                <a key={r.id} href={`/?s=${r.shortcode}`} style={{
+                                    color: 'rgba(255,255,255,0.6)',
+                                    textDecoration: 'none',
+                                    fontSize: 14,
+                                    transition: '0.2s'
+                                }}
+                                onMouseOver={e => e.currentTarget.style.color = '#fff'}
+                                onMouseOut={e => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}
+                                >{r.title}</a>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Connect */}
+                    <div>
+                        <h4 style={{
+                            fontSize: 14,
+                            fontWeight: 600,
+                            margin: '0 0 15px 0',
+                            color: '#fff',
+                            textTransform: 'uppercase',
+                            letterSpacing: 1
+                        }}>Connect</h4>
+                        <p style={{
+                            fontSize: 14,
+                            color: 'rgba(255,255,255,0.6)',
+                            lineHeight: 1.6,
+                            margin: 0
+                        }}>Follow on social media and streaming platforms for the latest updates and releases.</p>
+                    </div>
+                </div>
+
+                {/* Copyright */}
+                <div style={{
+                    borderTop: '1px solid rgba(255,255,255,0.1)',
+                    paddingTop: 20,
+                    textAlign: 'center'
+                }}>
+                    <p style={{
+                        fontSize: 13,
+                        color: 'rgba(255,255,255,0.4)',
+                        margin: 0
+                    }}>
+                        &copy; {new Date().getFullYear()} {home.artist_name}. All rights reserved.
+                    </p>
+                </div>
+            </footer>
         </div>
     );
 }
