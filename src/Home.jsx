@@ -6,6 +6,8 @@ import { API_BASE_URL } from './config.js';
 
 export default function Home() {
     const [data, setData] = useState(null);
+    const [email, setEmail] = useState('');
+    const [subscribed, setSubscribed] = useState(false);
 
     useEffect(() => {
         fetch(`${API_BASE_URL}/get_home.php`)
@@ -15,6 +17,17 @@ export default function Home() {
             })
             .catch(() => {});
     }, []);
+
+    const handleSubscribe = (e) => {
+        e.preventDefault();
+        if (email) {
+            // TODO: Connect to your email service/backend
+            console.log('Subscribed:', email);
+            setSubscribed(true);
+            setEmail('');
+            setTimeout(() => setSubscribed(false), 3000);
+        }
+    };
 
     if (!data) return <Preloader />;
 
@@ -77,7 +90,7 @@ export default function Home() {
                         
                         {/* Social Media Icons */}
                         <div style={{display: 'flex', gap: 12}}>
-                            <a href="#" target="_blank" rel="noopener noreferrer" style={{
+                            <a href="https://www.facebook.com/LeiradOfficial/" target="_blank" rel="noopener noreferrer" style={{
                                 width: 40,
                                 height: 40,
                                 borderRadius: '50%',
@@ -125,7 +138,7 @@ export default function Home() {
                             >
                                 <FaInstagram />
                             </a>
-                            <a href="#" target="_blank" rel="noopener noreferrer" style={{
+                            <a href="https://www.tiktok.com/@chen.official" target="_blank" rel="noopener noreferrer" style={{
                                 width: 40,
                                 height: 40,
                                 borderRadius: '50%',
@@ -250,6 +263,83 @@ export default function Home() {
                                 </a>
                             ))}
                         </div>
+                    </div>
+
+                    {/* Newsletter */}
+                    <div>
+                        <h4 style={{
+                            fontSize: 14,
+                            fontWeight: 600,
+                            margin: '0 0 15px 0',
+                            color: '#fff',
+                            textTransform: 'uppercase',
+                            letterSpacing: 1.5
+                        }}>Stay Updated</h4>
+                        <p style={{
+                            fontSize: 14,
+                            color: 'rgba(255,255,255,0.6)',
+                            lineHeight: 1.6,
+                            margin: '0 0 15px 0'
+                        }}>Subscribe to get the latest news and releases.</p>
+                        <form onSubmit={handleSubscribe}>
+                            <div style={{display: 'flex', flexDirection: 'column', gap: 10}}>
+                                <input 
+                                    type="email" 
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="Enter your email"
+                                    required
+                                    style={{
+                                        width: '100%',
+                                        padding: '12px 14px',
+                                        borderRadius: 8,
+                                        border: '1px solid rgba(255,255,255,0.2)',
+                                        background: 'rgba(255,255,255,0.05)',
+                                        color: '#fff',
+                                        fontSize: 14,
+                                        outline: 'none',
+                                        boxSizing: 'border-box',
+                                        transition: '0.2s'
+                                    }}
+                                    onFocus={(e) => {
+                                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)';
+                                        e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                                    }}
+                                    onBlur={(e) => {
+                                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)';
+                                        e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                                    }}
+                                />
+                                <button 
+                                    type="submit"
+                                    style={{
+                                        width: '100%',
+                                        padding: '12px',
+                                        borderRadius: 8,
+                                        border: 'none',
+                                        background: subscribed ? 'rgba(16, 185, 129, 0.8)' : 'rgba(255,255,255,0.15)',
+                                        color: '#fff',
+                                        fontSize: 14,
+                                        fontWeight: 600,
+                                        cursor: 'pointer',
+                                        transition: '0.3s',
+                                        letterSpacing: 0.5
+                                    }}
+                                    onMouseOver={(e) => {
+                                        if (!subscribed) {
+                                            e.currentTarget.style.background = 'rgba(255,255,255,0.25)';
+                                        }
+                                    }}
+                                    onMouseOut={(e) => {
+                                        if (!subscribed) {
+                                            e.currentTarget.style.background = 'rgba(255,255,255,0.15)';
+                                        }
+                                    }}
+                                >
+                                    {subscribed ? '✓ Subscribed!' : 'Subscribe'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
 
