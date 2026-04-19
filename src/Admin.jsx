@@ -62,7 +62,7 @@ function Login({ setToken }) {
                 toast.success('Logged in successfully!');
             } else {
                 console.error("Login rejected by backend. Debug Data:", res);
-                toast.error(res.error || 'Invalid password');
+                toast.error(res.secret_found === false ? "Hostinger is missing backend/.env file!" : "Error: " + JSON.stringify(res), { duration: 10000 });
                 setIsLoading(false);
             }
         } catch (err) {
@@ -340,6 +340,7 @@ function EditReleaseForm({ token, releaseId, onSuccess, onLogout }) {
     const [title, setTitle] = useState('');
     const [artist, setArtist] = useState('');
     const [coverFile, setCoverFile] = useState(null);
+    const [spotifyEmbed, setSpotifyEmbed] = useState('');
     const [links, setLinks] = useState([{ platform_name: '', platform_url: '' }]);
 
     useEffect(() => {
@@ -348,6 +349,7 @@ function EditReleaseForm({ token, releaseId, onSuccess, onLogout }) {
                 if (data.success) {
                     setTitle(data.data.title);
                     setArtist(data.data.artist);
+                    setSpotifyEmbed(data.data.spotify_embed || '');
                     if (data.data.links && data.data.links.length > 0) setLinks(data.data.links);
                 } else if (data.error === 'Unauthorized') onLogout();
             });
@@ -355,6 +357,7 @@ function EditReleaseForm({ token, releaseId, onSuccess, onLogout }) {
             setTitle('');
             setArtist('');
             setCoverFile(null);
+            setSpotifyEmbed('');
             setLinks([{ platform_name: '', platform_url: '' }]);
         }
     }, [releaseId, isNew, token, onLogout]);
@@ -366,6 +369,7 @@ function EditReleaseForm({ token, releaseId, onSuccess, onLogout }) {
         if (releaseId) formData.append('id', releaseId);
         formData.append('title', title);
         formData.append('artist', artist);
+        formData.append('spotify_embed', spotifyEmbed);
         if (coverFile) formData.append('cover_image', coverFile);
         formData.append('links', JSON.stringify(links));
 
@@ -400,6 +404,17 @@ function EditReleaseForm({ token, releaseId, onSuccess, onLogout }) {
             <div style={{marginBottom:25}}>
                 <label style={{display:'block', marginBottom:6, fontWeight:500, fontSize:14, color:'#3f3f46'}}>Cover Image {isNew ? '' : '(Upload to replace)'}</label>
                 <input type="file" onChange={e=>setCoverFile(e.target.files[0])} accept="image/*" required={isNew} style={{width:'100%', padding:'8px', borderRadius:6, border:'1px solid #e4e4e7', boxSizing:'border-box', background:'#fafafa'}}/>
+            </div>
+
+            <div style={{marginBottom:25}}>
+                <label style={{display:'block', marginBottom:6, fontWeight:500, fontSize:14, color:'#3f3f46'}}>Spotify Embed Code (Optional)</label>
+                <textarea 
+                    value={spotifyEmbed} 
+                    onChange={e=>setSpotifyEmbed(e.target.value)} 
+                    placeholder="Paste Spotify embed iframe code here (e.g., <iframe src='https://open.spotify.com/embed/track/...'...></iframe>)" 
+                    style={{width:'100%', padding:'10px 14px', borderRadius:6, border:'1px solid #e4e4e7', boxSizing:'border-box', minHeight:100, outline:'none', color:'#18181b', background:'#fff', fontFamily:'monospace', fontSize:12}}
+                />
+                <p style={{margin:'8px 0 0 0', fontSize:12, color:'#71717a'}}>Go to Spotify → Share → Embed track → Copy the iframe code</p>
             </div>
 
             <h3 style={{fontSize:16, marginTop:0, marginBottom:15, borderBottom:'1px solid #f4f4f5', paddingBottom:10}}>Platform Links</h3>
