@@ -78,6 +78,12 @@ function App() {
                     <p className="subtitle">Choose music service</p>
                 </div>
 
+                {release.spotify_embed && (
+                    <div className="spotify-embed" style={{ marginBottom: '24px' }}>
+                        <div dangerouslySetInnerHTML={{ __html: release.spotify_embed }} />
+                    </div>
+                )}
+
                 <div className="links-box">
                     {release.links.map((link, idx) => {
                         const pInfo = getPlatformInfo(link.platform_name);
