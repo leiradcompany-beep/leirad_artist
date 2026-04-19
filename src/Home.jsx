@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import Preloader from './Preloader.jsx';
+import { FaFacebook, FaTiktok, FaInstagram } from 'react-icons/fa';
 
 import { API_BASE_URL } from './config.js';
 
@@ -48,20 +49,20 @@ export default function Home() {
                 borderTop: '1px solid rgba(255,255,255,0.1)',
                 background: 'rgba(0,0,0,0.3)',
                 backdropFilter: 'blur(20px)',
-                padding: '40px 20px 30px'
+                padding: '50px 20px 30px'
             }}>
                 <div style={{
                     maxWidth: 1000,
                     margin: '0 auto',
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
                     gap: 40,
-                    marginBottom: 30
+                    marginBottom: 40
                 }}>
                     {/* Brand Section */}
                     <div>
                         <h3 style={{
-                            fontSize: 20,
+                            fontSize: 22,
                             fontWeight: 700,
                             margin: '0 0 15px 0',
                             color: '#fff',
@@ -71,8 +72,84 @@ export default function Home() {
                             fontSize: 14,
                             color: 'rgba(255,255,255,0.6)',
                             lineHeight: 1.6,
-                            margin: 0
+                            margin: '0 0 20px 0'
                         }}>{home.hero_subtitle || 'Official artist website. Listen to the latest releases on all major platforms.'}</p>
+                        
+                        {/* Social Media Icons */}
+                        <div style={{display: 'flex', gap: 12}}>
+                            <a href="#" target="_blank" rel="noopener noreferrer" style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: '50%',
+                                background: 'rgba(255,255,255,0.1)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#fff',
+                                textDecoration: 'none',
+                                transition: '0.3s',
+                                fontSize: 18
+                            }}
+                            onMouseOver={e => {
+                                e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+                                e.currentTarget.style.transform = 'translateY(-3px)';
+                            }}
+                            onMouseOut={e => {
+                                e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                                e.currentTarget.style.transform = 'translateY(0)';
+                            }}
+                            >
+                                <FaFacebook />
+                            </a>
+                            <a href="#" target="_blank" rel="noopener noreferrer" style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: '50%',
+                                background: 'rgba(255,255,255,0.1)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#fff',
+                                textDecoration: 'none',
+                                transition: '0.3s',
+                                fontSize: 18
+                            }}
+                            onMouseOver={e => {
+                                e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+                                e.currentTarget.style.transform = 'translateY(-3px)';
+                            }}
+                            onMouseOut={e => {
+                                e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                                e.currentTarget.style.transform = 'translateY(0)';
+                            }}
+                            >
+                                <FaInstagram />
+                            </a>
+                            <a href="#" target="_blank" rel="noopener noreferrer" style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: '50%',
+                                background: 'rgba(255,255,255,0.1)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#fff',
+                                textDecoration: 'none',
+                                transition: '0.3s',
+                                fontSize: 18
+                            }}
+                            onMouseOver={e => {
+                                e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+                                e.currentTarget.style.transform = 'translateY(-3px)';
+                            }}
+                            onMouseOut={e => {
+                                e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                                e.currentTarget.style.transform = 'translateY(0)';
+                            }}
+                            >
+                                <FaTiktok />
+                            </a>
+                        </div>
                     </div>
 
                     {/* Quick Links */}
@@ -83,33 +160,45 @@ export default function Home() {
                             margin: '0 0 15px 0',
                             color: '#fff',
                             textTransform: 'uppercase',
-                            letterSpacing: 1
+                            letterSpacing: 1.5
                         }}>Quick Links</h4>
                         <div style={{display: 'flex', flexDirection: 'column', gap: 10}}>
                             <a href="/" style={{
                                 color: 'rgba(255,255,255,0.6)',
                                 textDecoration: 'none',
                                 fontSize: 14,
-                                transition: '0.2s'
+                                transition: '0.2s',
+                                padding: '4px 0'
                             }}
-                            onMouseOver={e => e.currentTarget.style.color = '#fff'}
-                            onMouseOut={e => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}
+                            onMouseOver={e => {
+                                e.currentTarget.style.color = '#fff';
+                                e.currentTarget.style.paddingLeft = '8px';
+                            }}
+                            onMouseOut={e => {
+                                e.currentTarget.style.color = 'rgba(255,255,255,0.6)';
+                                e.currentTarget.style.paddingLeft = '0';
+                            }}
                             >Home</a>
-                            {releases && releases.slice(0, 3).map(r => (
-                                <a key={r.id} href={`/?s=${r.shortcode}`} style={{
-                                    color: 'rgba(255,255,255,0.6)',
-                                    textDecoration: 'none',
-                                    fontSize: 14,
-                                    transition: '0.2s'
-                                }}
-                                onMouseOver={e => e.currentTarget.style.color = '#fff'}
-                                onMouseOut={e => e.currentTarget.style.color = 'rgba(255,255,255,0.6)'}
-                                >{r.title}</a>
-                            ))}
+                            <a href="/admin" style={{
+                                color: 'rgba(255,255,255,0.6)',
+                                textDecoration: 'none',
+                                fontSize: 14,
+                                transition: '0.2s',
+                                padding: '4px 0'
+                            }}
+                            onMouseOver={e => {
+                                e.currentTarget.style.color = '#fff';
+                                e.currentTarget.style.paddingLeft = '8px';
+                            }}
+                            onMouseOut={e => {
+                                e.currentTarget.style.color = 'rgba(255,255,255,0.6)';
+                                e.currentTarget.style.paddingLeft = '0';
+                            }}
+                            >Admin Panel</a>
                         </div>
                     </div>
 
-                    {/* Connect */}
+                    {/* Latest Releases */}
                     <div>
                         <h4 style={{
                             fontSize: 14,
@@ -117,21 +206,57 @@ export default function Home() {
                             margin: '0 0 15px 0',
                             color: '#fff',
                             textTransform: 'uppercase',
-                            letterSpacing: 1
-                        }}>Connect</h4>
-                        <p style={{
-                            fontSize: 14,
-                            color: 'rgba(255,255,255,0.6)',
-                            lineHeight: 1.6,
-                            margin: 0
-                        }}>Follow on social media and streaming platforms for the latest updates and releases.</p>
+                            letterSpacing: 1.5
+                        }}>Latest Releases</h4>
+                        <div style={{display: 'flex', flexDirection: 'column', gap: 12}}>
+                            {releases && releases.slice(0, 3).map(r => (
+                                <a key={r.id} href={`/?s=${r.shortcode}`} style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 12,
+                                    textDecoration: 'none',
+                                    color: 'inherit',
+                                    transition: '0.2s',
+                                    padding: '6px',
+                                    borderRadius: 6
+                                }}
+                                onMouseOver={e => {
+                                    e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                                }}
+                                onMouseOut={e => {
+                                    e.currentTarget.style.background = 'transparent';
+                                }}
+                                >
+                                    <img src={r.full_cover_url} alt={r.title} style={{
+                                        width: 45,
+                                        height: 45,
+                                        borderRadius: 4,
+                                        objectFit: 'cover',
+                                        border: '1px solid rgba(255,255,255,0.1)'
+                                    }} />
+                                    <div>
+                                        <p style={{
+                                            margin: 0,
+                                            fontSize: 14,
+                                            fontWeight: 500,
+                                            color: 'rgba(255,255,255,0.9)'
+                                        }}>{r.title}</p>
+                                        <p style={{
+                                            margin: '3px 0 0 0',
+                                            fontSize: 12,
+                                            color: 'rgba(255,255,255,0.5)'
+                                        }}>{r.artist}</p>
+                                    </div>
+                                </a>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
                 {/* Copyright */}
                 <div style={{
                     borderTop: '1px solid rgba(255,255,255,0.1)',
-                    paddingTop: 20,
+                    paddingTop: 25,
                     textAlign: 'center'
                 }}>
                     <p style={{
