@@ -1,3 +1,8 @@
+# Ignore backend
 backend/
+
+# Ignore node_modules
 node_modules/
-.git
+
+# Ignore .git folders
+**/.git/
