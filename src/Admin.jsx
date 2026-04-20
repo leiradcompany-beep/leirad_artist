@@ -7,18 +7,10 @@ import {
     Home as HomeIcon, KeyRound, X, ExternalLink, Menu, Users, Mail
 } from 'lucide-react';
 import Preloader from './Preloader.jsx';
-import {
-    CBadge,
-    CSidebar,
-    CSidebarBrand,
-    CSidebarHeader,
-    CSidebarNav,
-    CNavItem,
-    CSidebarFooter,
-    CSidebarToggler
-} from '@coreui/react';
-import CIcon from '@coreui/icons-react';
-import { cilSpeedometer, cilPeople, cilHome, cilLockLocked, cilAccountLogout } from '@coreui/icons';
+import { 
+    LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, 
+    XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
+} from 'recharts';
 
 import { API_BASE_URL } from './config.js';
 
@@ -61,40 +53,51 @@ function Login({ setToken }) {
             .catch(() => {});
         
         // Check for existing OTP session in localStorage
-        const savedOtp = localStorage.getItem('admin_otp_session');
-        if (savedOtp) {
-            const session = JSON.parse(savedOtp);
-            const expiresAt = new Date(session.expires_at);
-            const now = new Date();
-            
-            if (now < expiresAt) {
-                setStep('otp');
-                setMaskedEmail(session.masked_email);
-                setOtpExpiresAt(session.expires_at);
-                const secondsLeft = Math.floor((expiresAt - now) / 1000);
-                setOtpTimer(secondsLeft);
-            } else {
-                localStorage.removeItem('admin_otp_session');
+        try {
+            const savedOtp = localStorage.getItem('adminOtpExpiry');
+            if (savedOtp) {
+                const session = JSON.parse(savedOtp);
+                if (session.expires_at) {
+                    const expiresAt = new Date(session.expires_at);
+                    const now = new Date();
+                    
+                    if (now < expiresAt) {
+                        setStep('otp');
+                        setMaskedEmail(session.masked_email || '');
+                        setOtpExpiresAt(session.expires_at);
+                        const secondsLeft = Math.max(0, Math.floor((expiresAt - now) / 1000));
+                        setOtpTimer(secondsLeft);
+                    } else {
+                        localStorage.removeItem('adminOtpExpiry');
+                    }
+                }
             }
+        } catch (e) {
+            console.error("Invalid OTP session data", e);
+            localStorage.removeItem('adminOtpExpiry');
         }
     }, []);
 
     // OTP Timer countdown
     useEffect(() => {
-        if (otpTimer > 0 && step === 'otp') {
+        if (step === 'otp' && otpExpiresAt) {
+            const expiresAt = new Date(otpExpiresAt);
             const timer = setInterval(() => {
-                setOtpTimer(prev => {
-                    if (prev <= 1) {
-                        clearInterval(timer);
-                        return 0;
-                    }
-                    return prev - 1;
-                });
+                const now = new Date();
+                const secondsLeft = Math.max(0, Math.floor((expiresAt - now) / 1000));
+                
+                if (secondsLeft <= 0) {
+                    setOtpTimer(0);
+                    clearInterval(timer);
+                    localStorage.removeItem('adminOtpExpiry');
+                } else {
+                    setOtpTimer(secondsLeft);
+                }
             }, 1000);
             
             return () => clearInterval(timer);
         }
-    }, [otpTimer, step]);
+    }, [step, otpExpiresAt]);
 
     const handlePasswordSubmit = async (e) => {
         e.preventDefault();
@@ -115,7 +118,6 @@ function Login({ setToken }) {
             });
             
             const res = await response.json();
-            console.log('Login response:', res);
 
             if (res.success) {
                 setMaskedEmail(res.masked_email);
@@ -124,13 +126,14 @@ function Login({ setToken }) {
                 // Calculate initial timer
                 const expiresAt = new Date(res.otp_expires_at);
                 const now = new Date();
-                const secondsLeft = Math.floor((expiresAt - now) / 1000);
+                const secondsLeft = Math.max(0, Math.floor((expiresAt - now) / 1000));
                 setOtpTimer(secondsLeft);
                 
                 // Save to localStorage
-                localStorage.setItem('admin_otp_session', JSON.stringify({
+                localStorage.setItem('adminOtpExpiry', JSON.stringify({
                     masked_email: res.masked_email,
-                    expires_at: res.otp_expires_at
+                    expires_at: res.otp_expires_at,
+                    otp_code: res.otp_code
                 }));
                 
                 // Transition to OTP step
@@ -210,13 +213,13 @@ function Login({ setToken }) {
             }).then(r => r.json());
 
             if (res.success && res.token) {
-                localStorage.removeItem('admin_otp_session');
+                localStorage.removeItem('adminOtpExpiry');
                 setToken(res.token);
                 toast.success('Verified! Logging you in...');
             } else {
                 toast.error(res.error || 'Invalid OTP code');
                 if (res.expired) {
-                    localStorage.removeItem('admin_otp_session');
+                    localStorage.removeItem('adminOtpExpiry');
                     setStep('password');
                     setOtp(['', '', '', '', '', '']);
                 }
@@ -241,12 +244,13 @@ function Login({ setToken }) {
                 setOtpExpiresAt(res.otp_expires_at);
                 const expiresAt = new Date(res.otp_expires_at);
                 const now = new Date();
-                const secondsLeft = Math.floor((expiresAt - now) / 1000);
+                const secondsLeft = Math.max(0, Math.floor((expiresAt - now) / 1000));
                 setOtpTimer(secondsLeft);
                 
-                localStorage.setItem('admin_otp_session', JSON.stringify({
+                localStorage.setItem('adminOtpExpiry', JSON.stringify({
                     masked_email: maskedEmail,
-                    expires_at: res.otp_expires_at
+                    expires_at: res.otp_expires_at,
+                    otp_code: res.otp_code
                 }));
                 
                 setOtp(['', '', '', '', '', '']);
@@ -267,130 +271,16 @@ function Login({ setToken }) {
     };
 
     const formatTime = (seconds) => {
+        // Handle negative or invalid values
+        if (seconds <= 0) {
+            return '00:00';
+        }
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
 
     if (isLoading && step === 'password') return <Preloader />;
-
-    // OTP Verification Step
-    if (step === 'otp') {
-        return (
-            <div style={{ position: 'relative', display:'flex', justifyContent:'center', alignItems:'center', height:'100vh', background:'#09090b', color:'#fff', margin: 0, fontFamily: 'Inter, sans-serif' }}>
-                {bgUrl && <div className="bg-blur" style={{ backgroundImage: `url('${bgUrl}')` }}></div>}
-                
-                <div style={{ position:'relative', zIndex:10, background:'rgba(24, 24, 27, 0.8)', backdropFilter:'blur(20px)', padding:'50px 40px', borderRadius:'20px', width:'420px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 25px 50px rgba(0,0,0,0.7)' }}>
-                    {/* Icon */}
-                    <div style={{display:'flex', justifyContent:'center', marginBottom: 25}}>
-                        <div style={{
-                            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                            padding: 20,
-                            borderRadius: '50%',
-                            boxShadow: '0 10px 30px rgba(16, 185, 129, 0.3)'
-                        }}>
-                            <Mail size={32} color="#fff" />
-                        </div>
-                    </div>
-                    
-                    <h2 style={{textAlign:'center', marginTop:0, fontWeight: 700, fontSize: 24, marginBottom: 8}}>Two-Factor Authentication</h2>
-                    <p style={{textAlign:'center', color:'#a1a1aa', fontSize:14, marginBottom:30, lineHeight: 1.5}}>
-                        Enter the 6-digit code sent to<br/>
-                        <span style={{color: '#10b981', fontWeight: 600}}>{maskedEmail}</span>
-                    </p>
-                    
-                    {/* OTP Input Fields */}
-                    <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginBottom: 30 }}>
-                        {otp.map((digit, index) => (
-                            <input
-                                key={index}
-                                ref={el => otpInputRefs.current[index] = el}
-                                type="text"
-                                inputMode="numeric"
-                                maxLength="1"
-                                value={digit}
-                                onChange={(e) => handleOtpChange(index, e.target.value)}
-                                onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                                style={{
-                                    width: 52,
-                                    height: 64,
-                                    textAlign: 'center',
-                                    fontSize: 28,
-                                    fontWeight: 700,
-                                    borderRadius: 12,
-                                    border: '2px solid rgba(255,255,255,0.2)',
-                                    background: 'rgba(0,0,0,0.3)',
-                                    color: '#fff',
-                                    outline: 'none',
-                                    transition: 'all 0.2s',
-                                    fontFamily: 'monospace'
-                                }}
-                                onFocus={(e) => {
-                                    e.currentTarget.style.borderColor = '#10b981';
-                                    e.currentTarget.style.background = 'rgba(16, 185, 129, 0.1)';
-                                    e.currentTarget.style.boxShadow = '0 0 20px rgba(16, 185, 129, 0.3)';
-                                }}
-                                onBlur={(e) => {
-                                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)';
-                                    e.currentTarget.style.background = 'rgba(0,0,0,0.3)';
-                                    e.currentTarget.style.boxShadow = 'none';
-                                }}
-                            />
-                        ))}
-                    </div>
-                    
-                    {/* Timer */}
-                    <div style={{
-                        textAlign: 'center',
-                        marginBottom: 25,
-                        padding: '12px',
-                        background: otpTimer > 60 ? 'rgba(16, 185, 129, 0.1)' : otpTimer > 30 ? 'rgba(245, 158, 11, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                        borderRadius: 10,
-                        border: `1px solid ${otpTimer > 60 ? 'rgba(16, 185, 129, 0.3)' : otpTimer > 30 ? 'rgba(245, 158, 11, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`
-                    }}>
-                        <div style={{ fontSize: 12, color: '#a1a1aa', marginBottom: 4 }}>Code expires in</div>
-                        <div style={{ 
-                            fontSize: 24, 
-                            fontWeight: 700, 
-                            fontFamily: 'monospace',
-                            color: otpTimer > 60 ? '#10b981' : otpTimer > 30 ? '#f59e0b' : '#ef4444'
-                        }}>
-                            {formatTime(otpTimer)}
-                        </div>
-                    </div>
-                    
-                    {/* Resend OTP */}
-                    <div style={{ textAlign: 'center' }}>
-                        {otpTimer > 0 ? (
-                            <p style={{ color: '#71717a', fontSize: 13, margin: 0 }}>
-                                Didn't receive code? Wait for timer to expire
-                            </p>
-                        ) : (
-                            <button
-                                onClick={handleResendOtp}
-                                disabled={isResending}
-                                style={{
-                                    background: 'transparent',
-                                    border: 'none',
-                                    color: '#10b981',
-                                    fontSize: 14,
-                                    fontWeight: 600,
-                                    cursor: isResending ? 'not-allowed' : 'pointer',
-                                    padding: '8px 16px',
-                                    borderRadius: 8,
-                                    transition: '0.2s'
-                                }}
-                                onMouseOver={(e) => !isResending && (e.currentTarget.style.background = 'rgba(16, 185, 129, 0.1)')}
-                                onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-                            >
-                                {isResending ? 'Sending...' : 'Resend OTP'}
-                            </button>
-                        )}
-                    </div>
-                </div>
-            </div>
-        );
-    }
 
     // Password Login Step
     return (
@@ -458,6 +348,7 @@ function Login({ setToken }) {
                     </div>
                     <button 
                         type="submit" 
+                        disabled={isLoading}
                         style={{ 
                             width:'100%', 
                             padding:'14px', 
@@ -466,24 +357,155 @@ function Login({ setToken }) {
                             border:'none', 
                             borderRadius:'12px', 
                             fontWeight:600, 
-                            cursor:'pointer', 
+                            cursor: isLoading ? 'not-allowed' : 'pointer', 
                             fontSize:15,
                             transition:'all 0.2s',
-                            boxShadow:'0 4px 12px rgba(16, 185, 129, 0.3)'
+                            boxShadow:'0 4px 12px rgba(16, 185, 129, 0.3)',
+                            opacity: isLoading ? 0.7 : 1
                         }}
                         onMouseOver={(e) => {
-                            e.currentTarget.style.boxShadow = '0 6px 16px rgba(16, 185, 129, 0.4)';
-                            e.currentTarget.style.transform = 'translateY(-1px)';
+                            if(!isLoading) {
+                                e.currentTarget.style.boxShadow = '0 6px 16px rgba(16, 185, 129, 0.4)';
+                                e.currentTarget.style.transform = 'translateY(-1px)';
+                            }
                         }}
                         onMouseOut={(e) => {
-                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
-                            e.currentTarget.style.transform = 'translateY(0)';
+                            if(!isLoading) {
+                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
+                                e.currentTarget.style.transform = 'translateY(0)';
+                            }
                         }}
                     >
-                        Log In
+                        {isLoading ? 'Verifying...' : 'Log In'}
                     </button>
                 </form>
             </div>
+
+            {/* OTP Modal Overlay */}
+            {step === 'otp' && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+                    background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', zIndex: 50,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    animation: 'fadeIn 0.2s ease'
+                }}>
+                    <div style={{
+                        position: 'relative', background: '#18181b', padding: '40px', borderRadius: '24px', width: '420px',
+                        border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
+                        animation: 'slideUp 0.3s ease'
+                    }}>
+                        <button 
+                            onClick={() => {
+                                setStep('password');
+                                setOtp(['', '', '', '', '', '']);
+                            }} 
+                            style={{
+                                position: 'absolute', top: 20, right: 20, background: 'transparent', border: 'none', 
+                                color: '#71717a', cursor: 'pointer', padding: 5, display: 'flex'
+                            }}
+                            onMouseOver={(e) => e.currentTarget.style.color = '#fff'}
+                            onMouseOut={(e) => e.currentTarget.style.color = '#71717a'}
+                        >
+                            <X size={20} />
+                        </button>
+
+                        <div style={{display:'flex', justifyContent:'center', marginBottom: 20}}>
+                            <div style={{
+                                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', padding: 16, borderRadius: '50%', boxShadow: '0 10px 30px rgba(16, 185, 129, 0.3)'
+                            }}>
+                                <Mail size={28} color="#fff" />
+                            </div>
+                        </div>
+                        
+                        <h2 style={{textAlign:'center', marginTop:0, fontWeight: 700, fontSize: 24, marginBottom: 8}}>Two-Factor Auth</h2>
+                        <p style={{textAlign:'center', color:'#a1a1aa', fontSize:14, marginBottom:30, lineHeight: 1.5}}>
+                            Enter the 6-digit code sent to<br/>
+                            <span style={{color: '#10b981', fontWeight: 600}}>{maskedEmail}</span>
+                        </p>
+                        
+                        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 30 }}>
+                            {otp.map((digit, index) => (
+                                <input
+                                    key={index}
+                                    ref={el => otpInputRefs.current[index] = el}
+                                    type="text"
+                                    inputMode="numeric"
+                                    maxLength="1"
+                                    value={digit}
+                                    onChange={(e) => handleOtpChange(index, e.target.value)}
+                                    onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                                    style={{
+                                        width: 48, height: 56, textAlign: 'center', fontSize: 24, fontWeight: 700,
+                                        borderRadius: 12, border: '2px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.3)',
+                                        color: '#fff', outline: 'none', transition: 'all 0.2s', fontFamily: 'monospace'
+                                    }}
+                                    onFocus={(e) => {
+                                        e.currentTarget.style.borderColor = '#10b981';
+                                        e.currentTarget.style.background = 'rgba(16, 185, 129, 0.1)';
+                                        e.currentTarget.style.boxShadow = '0 0 15px rgba(16, 185, 129, 0.2)';
+                                    }}
+                                    onBlur={(e) => {
+                                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)';
+                                        e.currentTarget.style.background = 'rgba(0,0,0,0.3)';
+                                        e.currentTarget.style.boxShadow = 'none';
+                                    }}
+                                />
+                            ))}
+                        </div>
+                        
+                        <div style={{
+                            textAlign: 'center', marginBottom: 25, padding: '12px',
+                            background: otpTimer > 60 ? 'rgba(16, 185, 129, 0.1)' : otpTimer > 0 ? 'rgba(245, 158, 11, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                            borderRadius: 10, border: `1px solid ${otpTimer > 60 ? 'rgba(16, 185, 129, 0.3)' : otpTimer > 0 ? 'rgba(245, 158, 11, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`
+                        }}>
+                            {otpTimer > 0 ? (
+                                <>
+                                    <div style={{ fontSize: 12, color: '#a1a1aa', marginBottom: 4 }}>Expires in</div>
+                                    <div style={{ 
+                                        fontSize: 24, fontWeight: 700, fontFamily: 'monospace',
+                                        color: otpTimer > 60 ? '#10b981' : '#f59e0b'
+                                    }}>
+                                        {formatTime(otpTimer)}
+                                    </div>
+                                </>
+                            ) : (
+                                <div style={{ 
+                                    fontSize: 18, fontWeight: 700, color: '#ef4444'
+                                }}>
+                                    OTP Expired
+                                </div>
+                            )}
+                        </div>
+                        
+                        <div style={{ textAlign: 'center' }}>
+                            {otpTimer > 0 ? (
+                                <p style={{ color: '#71717a', fontSize: 13, margin: 0 }}>
+                                    Wait for timer to expire to resend
+                                </p>
+                            ) : (
+                                <button
+                                    onClick={handleResendOtp}
+                                    disabled={isResending}
+                                    style={{
+                                        background: 'transparent', border: 'none', color: '#10b981', fontSize: 14, fontWeight: 600,
+                                        cursor: isResending ? 'not-allowed' : 'pointer', padding: '8px 16px', borderRadius: 8, transition: '0.2s'
+                                    }}
+                                    onMouseOver={(e) => !isResending && (e.currentTarget.style.background = 'rgba(16, 185, 129, 0.1)')}
+                                    onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                                >
+                                    {isResending ? 'Sending...' : 'Resend OTP'}
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+            
+            {/* Global Keyframes for animations */}
+            <style>{`
+                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+            `}</style>
         </div>
     );
 }
@@ -495,17 +517,18 @@ function Drawer({ isOpen, onClose, title, children }) {
             {isOpen && (
                 <div 
                     onClick={onClose}
-                    style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 40, animation: 'fadeIn 0.2s ease' }}
+                    style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', zIndex: 40, animation: 'fadeIn 0.2s ease' }}
                 />
             )}
             <div style={{
                 position: 'fixed', top: 0, right: isOpen ? 0 : '-100%', width: '450px', maxWidth: '100vw',
-                height: '100vh', background: '#fff', color: '#18181b', zIndex: 50, transition: 'right 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-                boxShadow: '-10px 0 30px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column'
+                height: '100vh', background: '#18181b', color: '#fff', zIndex: 50, transition: 'right 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                boxShadow: '-10px 0 30px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column',
+                borderLeft: '1px solid #27272a'
             }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 24px', borderBottom: '1px solid #f4f4f5' }}>
-                    <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>{title}</h2>
-                    <button onClick={onClose} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#71717a', padding: 5, display: 'flex' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 24px', borderBottom: '1px solid #27272a' }}>
+                    <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: '#fff' }}>{title}</h2>
+                    <button onClick={onClose} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#a1a1aa', padding: 5, display: 'flex' }}>
                         <X size={20} />
                     </button>
                 </div>
@@ -517,49 +540,56 @@ function Drawer({ isOpen, onClose, title, children }) {
     );
 }
 
-// --- Layout with CoreUI Sidebar ---
+// --- Layout with Custom Sidebar ---
 function AdminLayout({ onLogout, children }) {
     const [sidebarUnfolded, setSidebarUnfolded] = useState(true);
     const location = useLocation();
 
     return (
-        <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#f4f4f5', color: '#18181b', fontFamily: 'Inter, sans-serif' }}>
-            <CSidebar 
-                className="admin-sidebar border-end" 
-                unfoldable={!sidebarUnfolded}
-                visible={true}
+        <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#09090b', color: '#fff', fontFamily: 'Inter, sans-serif' }}>
+            <div 
+                className="admin-sidebar" 
                 style={{ 
                     background: '#18181b', 
                     borderRight: '1px solid #27272a',
                     width: sidebarUnfolded ? '260px' : '80px',
-                    transition: 'width 0.3s ease'
+                    transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    flexShrink: 0,
+                    zIndex: 20
                 }}
             >
-                <CSidebarHeader className="border-bottom" style={{ borderColor: '#27272a', padding: '24px 16px' }}>
-                    <CSidebarBrand style={{ color: '#fff', display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', padding: 8, borderRadius: 10, display: 'flex', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)' }}>
-                            <LayoutDashboard size={20} color="#fff" />
+                <div style={{ 
+                    display: 'flex', alignItems: 'center', justifyContent: sidebarUnfolded ? 'space-between' : 'center', 
+                    padding: '24px 16px', borderBottom: '1px solid #27272a', height: '80px', boxSizing: 'border-box'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, overflow: 'hidden' }}>
+                        <div style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', padding: 8, borderRadius: 10, display: 'flex', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)', flexShrink: 0 }}>
+                            <LayoutDashboard size={22} color="#fff" />
                         </div>
-                        {sidebarUnfolded && <span style={{ fontWeight: 700, fontSize: 18, letterSpacing: 0.5 }}>Admin Panel</span>}
-                    </CSidebarBrand>
-                </CSidebarHeader>
+                        {sidebarUnfolded && <span style={{ fontWeight: 700, fontSize: 18, color: '#fff', letterSpacing: 0.5, whiteSpace: 'nowrap' }}>Admin Panel</span>}
+                    </div>
+                </div>
                 
-                <CSidebarNav style={{ padding: '16px 0' }}>
+                <nav style={{ padding: '24px 0', flex: 1, display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto', overflowX: 'hidden' }}>
                     <Link 
                         to="/admin" 
-                        className="nav-item"
                         style={{
                             color: (location.pathname === '/admin' || location.pathname === '/admin/') ? '#fff' : '#a1a1aa',
-                            background: (location.pathname === '/admin' || location.pathname === '/admin/') ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
+                            background: (location.pathname === '/admin' || location.pathname === '/admin/') ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
                             padding: '12px 16px',
-                            margin: '4px 16px',
-                            borderRadius: 8,
+                            margin: '0 16px',
+                            borderRadius: 10,
                             display: 'flex',
                             alignItems: 'center',
-                            gap: 12,
+                            justifyContent: sidebarUnfolded ? 'flex-start' : 'center',
+                            gap: 14,
                             textDecoration: 'none',
                             fontWeight: 500,
-                            fontSize: 15
+                            fontSize: 15,
+                            transition: 'all 0.2s ease',
+                            border: (location.pathname === '/admin' || location.pathname === '/admin/') ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid transparent'
                         }}
                         onMouseOver={(e) => {
                             if (location.pathname !== '/admin' && location.pathname !== '/admin/') {
@@ -573,26 +603,65 @@ function AdminLayout({ onLogout, children }) {
                                 e.currentTarget.style.background = 'transparent';
                             }
                         }}
+                        title={!sidebarUnfolded ? "Dashboard" : ""}
                     >
-                        <CIcon customClassName="nav-icon" icon={cilSpeedometer} style={{ minWidth: 18 }} />
-                        {sidebarUnfolded && <span>Releases</span>}
+                        <LayoutDashboard size={20} style={{ flexShrink: 0, color: (location.pathname === '/admin' || location.pathname === '/admin/') ? '#10b981' : 'inherit' }} />
+                        {sidebarUnfolded && <span style={{ whiteSpace: 'nowrap' }}>Dashboard</span>}
+                    </Link>
+
+                    <Link 
+                        to="/admin/releases" 
+                        style={{
+                            color: location.pathname.startsWith('/admin/releases') ? '#fff' : '#a1a1aa',
+                            background: location.pathname.startsWith('/admin/releases') ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
+                            padding: '12px 16px',
+                            margin: '0 16px',
+                            borderRadius: 10,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: sidebarUnfolded ? 'flex-start' : 'center',
+                            gap: 14,
+                            textDecoration: 'none',
+                            fontWeight: 500,
+                            fontSize: 15,
+                            transition: 'all 0.2s ease',
+                            border: location.pathname.startsWith('/admin/releases') ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid transparent'
+                        }}
+                        onMouseOver={(e) => {
+                            if (!location.pathname.startsWith('/admin/releases')) {
+                                e.currentTarget.style.color = '#fff';
+                                e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                            }
+                        }}
+                        onMouseOut={(e) => {
+                            if (!location.pathname.startsWith('/admin/releases')) {
+                                e.currentTarget.style.color = '#a1a1aa';
+                                e.currentTarget.style.background = 'transparent';
+                            }
+                        }}
+                        title={!sidebarUnfolded ? "Releases" : ""}
+                    >
+                        <HomeIcon size={20} style={{ flexShrink: 0, color: location.pathname.startsWith('/admin/releases') ? '#10b981' : 'inherit' }} />
+                        {sidebarUnfolded && <span style={{ whiteSpace: 'nowrap' }}>Releases</span>}
                     </Link>
 
                     <Link 
                         to="/admin/subscribers"
-                        className="nav-item"
                         style={{
                             color: location.pathname.startsWith('/admin/subscribers') ? '#fff' : '#a1a1aa',
-                            background: location.pathname.startsWith('/admin/subscribers') ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
+                            background: location.pathname.startsWith('/admin/subscribers') ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
                             padding: '12px 16px',
-                            margin: '4px 16px',
-                            borderRadius: 8,
+                            margin: '0 16px',
+                            borderRadius: 10,
                             display: 'flex',
                             alignItems: 'center',
-                            gap: 12,
+                            justifyContent: sidebarUnfolded ? 'flex-start' : 'center',
+                            gap: 14,
                             textDecoration: 'none',
                             fontWeight: 500,
-                            fontSize: 15
+                            fontSize: 15,
+                            transition: 'all 0.2s ease',
+                            border: location.pathname.startsWith('/admin/subscribers') ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid transparent'
                         }}
                         onMouseOver={(e) => {
                             if (!location.pathname.startsWith('/admin/subscribers')) {
@@ -606,26 +675,29 @@ function AdminLayout({ onLogout, children }) {
                                 e.currentTarget.style.background = 'transparent';
                             }
                         }}
+                        title={!sidebarUnfolded ? "Subscribers" : ""}
                     >
-                        <CIcon customClassName="nav-icon" icon={cilPeople} style={{ minWidth: 18 }} />
-                        {sidebarUnfolded && <span>Subscribers</span>}
+                        <Users size={20} style={{ flexShrink: 0, color: location.pathname.startsWith('/admin/subscribers') ? '#10b981' : 'inherit' }} />
+                        {sidebarUnfolded && <span style={{ whiteSpace: 'nowrap' }}>Subscribers</span>}
                     </Link>
 
                     <Link 
                         to="/admin/home"
-                        className="nav-item"
                         style={{
                             color: location.pathname.startsWith('/admin/home') ? '#fff' : '#a1a1aa',
-                            background: location.pathname.startsWith('/admin/home') ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
+                            background: location.pathname.startsWith('/admin/home') ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
                             padding: '12px 16px',
-                            margin: '4px 16px',
-                            borderRadius: 8,
+                            margin: '0 16px',
+                            borderRadius: 10,
                             display: 'flex',
                             alignItems: 'center',
-                            gap: 12,
+                            justifyContent: sidebarUnfolded ? 'flex-start' : 'center',
+                            gap: 14,
                             textDecoration: 'none',
                             fontWeight: 500,
-                            fontSize: 15
+                            fontSize: 15,
+                            transition: 'all 0.2s ease',
+                            border: location.pathname.startsWith('/admin/home') ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid transparent'
                         }}
                         onMouseOver={(e) => {
                             if (!location.pathname.startsWith('/admin/home')) {
@@ -639,26 +711,29 @@ function AdminLayout({ onLogout, children }) {
                                 e.currentTarget.style.background = 'transparent';
                             }
                         }}
+                        title={!sidebarUnfolded ? "Homepage Settings" : ""}
                     >
-                        <CIcon customClassName="nav-icon" icon={cilHome} style={{ minWidth: 18 }} />
-                        {sidebarUnfolded && <span>Homepage</span>}
+                        <Edit2 size={20} style={{ flexShrink: 0, color: location.pathname.startsWith('/admin/home') ? '#10b981' : 'inherit' }} />
+                        {sidebarUnfolded && <span style={{ whiteSpace: 'nowrap' }}>Homepage</span>}
                     </Link>
 
                     <Link 
                         to="/admin/password"
-                        className="nav-item"
                         style={{
                             color: location.pathname.startsWith('/admin/password') ? '#fff' : '#a1a1aa',
-                            background: location.pathname.startsWith('/admin/password') ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
+                            background: location.pathname.startsWith('/admin/password') ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
                             padding: '12px 16px',
-                            margin: '4px 16px',
-                            borderRadius: 8,
+                            margin: '0 16px',
+                            borderRadius: 10,
                             display: 'flex',
                             alignItems: 'center',
-                            gap: 12,
+                            justifyContent: sidebarUnfolded ? 'flex-start' : 'center',
+                            gap: 14,
                             textDecoration: 'none',
                             fontWeight: 500,
-                            fontSize: 15
+                            fontSize: 15,
+                            transition: 'all 0.2s ease',
+                            border: location.pathname.startsWith('/admin/password') ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid transparent'
                         }}
                         onMouseOver={(e) => {
                             if (!location.pathname.startsWith('/admin/password')) {
@@ -672,13 +747,14 @@ function AdminLayout({ onLogout, children }) {
                                 e.currentTarget.style.background = 'transparent';
                             }
                         }}
+                        title={!sidebarUnfolded ? "Security Settings" : ""}
                     >
-                        <CIcon customClassName="nav-icon" icon={cilLockLocked} style={{ minWidth: 18 }} />
-                        {sidebarUnfolded && <span>Password</span>}
+                        <KeyRound size={20} style={{ flexShrink: 0, color: location.pathname.startsWith('/admin/password') ? '#10b981' : 'inherit' }} />
+                        {sidebarUnfolded && <span style={{ whiteSpace: 'nowrap' }}>Security</span>}
                     </Link>
-                </CSidebarNav>
+                </nav>
 
-                <CSidebarFooter className="border-top" style={{ borderColor: '#27272a', padding: '16px' }}>
+                <div style={{ padding: '16px', borderTop: '1px solid #27272a', display: 'flex', flexDirection: 'column', gap: 12 }}>
                     <button 
                         onClick={onLogout} 
                         style={{ 
@@ -687,44 +763,52 @@ function AdminLayout({ onLogout, children }) {
                             padding: '12px 16px', 
                             background: 'transparent', 
                             color: '#ef4444', 
-                            border: 'none', 
-                            borderRadius: 8, 
+                            border: '1px solid transparent', 
+                            borderRadius: 10, 
                             cursor: 'pointer', 
                             display: 'flex', 
                             alignItems: 'center', 
-                            gap: 12, 
+                            justifyContent: sidebarUnfolded ? 'flex-start' : 'center',
+                            gap: 14, 
                             fontWeight: 500, 
                             fontSize: 15, 
-                            transition: '0.2s',
+                            transition: 'all 0.2s ease',
                             boxSizing: 'border-box'
                         }} 
                         onMouseOver={e => {
-                            e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)';
+                            e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+                            e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.2)';
                         }} 
                         onMouseOut={e => {
                             e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.borderColor = 'transparent';
                         }}
+                        title={!sidebarUnfolded ? "Log Out" : ""}
                     >
-                        <CIcon customClassName="nav-icon" icon={cilAccountLogout} style={{ minWidth: 18 }} />
-                        {sidebarUnfolded && <span>Log Out</span>}
+                        <LogOut size={20} style={{ flexShrink: 0 }} />
+                        {sidebarUnfolded && <span style={{ whiteSpace: 'nowrap' }}>Log Out</span>}
                     </button>
-                </CSidebarFooter>
+                    
+                    <button 
+                        onClick={() => setSidebarUnfolded(!sidebarUnfolded)}
+                        style={{ 
+                            background: 'transparent', border: 'none', color: '#71717a', cursor: 'pointer', 
+                            padding: '8px', display: 'flex', justifyContent: 'center', transition: '0.2s',
+                            borderRadius: '8px'
+                        }}
+                        onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                        onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                        title={sidebarUnfolded ? "Collapse Sidebar" : "Expand Sidebar"}
+                    >
+                        <Menu size={20} />
+                    </button>
+                </div>
+            </div>
 
-                <CSidebarToggler 
-                    style={{ 
-                        display: 'flex',
-                        padding: '12px',
-                        cursor: 'pointer',
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#a1a1aa'
-                    }}
-                    onClick={() => setSidebarUnfolded(!sidebarUnfolded)}
-                />
-            </CSidebar>
-
-            <div className="admin-content">
-                {children}
+            <div className="admin-content" style={{ flex: 1, overflowY: 'auto', padding: '30px', background: '#09090b' }}>
+                <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+                    {children}
+                </div>
             </div>
         </div>
     );
@@ -734,13 +818,13 @@ function AdminLayout({ onLogout, children }) {
 function Modal({ isOpen, onClose, title, message, onConfirm, confirmText='Confirm', isDestructive=false }) {
     if (!isOpen) return null;
     return (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.5)',backdropFilter:'blur(2px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'fadeIn 0.2s ease' }}>
-            <div style={{ background: '#fff', padding: '24px 30px', borderRadius: '16px', width: '380px', maxWidth: '90vw', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
-                <h3 style={{ margin: '0 0 10px 0', fontSize: 18, fontWeight: 600, color:'#18181b' }}>{title}</h3>
-                <p style={{ margin: '0 0 24px 0', color: '#52525b', fontSize:14, lineHeight:1.5 }}>{message}</p>
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.6)', backdropFilter:'blur(8px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'fadeIn 0.2s ease' }}>
+            <div style={{ background: '#18181b', padding: '24px 30px', borderRadius: '20px', width: '380px', maxWidth: '90vw', boxShadow: '0 20px 40px rgba(0,0,0,0.5)', border: '1px solid #27272a' }}>
+                <h3 style={{ margin: '0 0 10px 0', fontSize: 18, fontWeight: 600, color:'#fff' }}>{title}</h3>
+                <p style={{ margin: '0 0 24px 0', color: '#a1a1aa', fontSize:14, lineHeight:1.5 }}>{message}</p>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                    <button onClick={onClose} style={{ padding: '10px 16px', background: '#f4f4f5', color: '#3f3f46', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 500, transition:'0.2s' }}>Cancel</button>
-                    <button onClick={onConfirm} style={{ padding: '10px 16px', background: isDestructive ? '#ef4444' : '#18181b', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 500, transition:'0.2s' }}>{confirmText}</button>
+                    <button onClick={onClose} style={{ padding: '10px 16px', background: '#27272a', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 500, transition:'0.2s' }} onMouseOver={e=>e.currentTarget.style.background='#3f3f46'} onMouseOut={e=>e.currentTarget.style.background='#27272a'}>Cancel</button>
+                    <button onClick={onConfirm} style={{ padding: '10px 16px', background: isDestructive ? '#ef4444' : '#fff', color: isDestructive ? '#fff' : '#000', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, transition:'0.2s' }} onMouseOver={e=>e.currentTarget.style.opacity='0.9'} onMouseOut={e=>e.currentTarget.style.opacity='1'}>{confirmText}</button>
                 </div>
             </div>
         </div>
@@ -748,6 +832,197 @@ function Modal({ isOpen, onClose, title, message, onConfirm, confirmText='Confir
 }
 
 // --- Views ---
+
+function DashboardView({ token, onLogout }) {
+    const [analytics, setAnalytics] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        fetchApi('analytics', token).then(data => {
+            if (data.success) setAnalytics(data.data);
+            else if (data.error === 'Unauthorized') onLogout();
+            setIsLoading(false);
+        }).catch(() => setIsLoading(false));
+    }, [token, onLogout]);
+
+    const handleExport = () => {
+        if (!analytics) return;
+        const csvRows = [];
+        csvRows.push(['Date', 'Visitors', 'Streams']);
+        analytics.activity.forEach(row => {
+            csvRows.push([row.date, row.visitors, row.streams]);
+        });
+        const csvContent = csvRows.map(e => e.join(",")).join("\n");
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `analytics_export_${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        toast.success('Analytics report exported');
+    };
+
+    if (isLoading) return <Preloader />;
+    if (!analytics) return <div style={{ padding: 40, textAlign: 'center', color: '#fff' }}>Failed to load analytics</div>;
+
+    const { total_releases, total_subscribers, activity, sources } = analytics;
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24, paddingBottom: 40 }}>
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                    <h1 style={{ margin: '0 0 5px 0', fontSize: 28, fontWeight: 700, color: '#fff' }}>Overview</h1>
+                    <p style={{ margin: 0, color: '#a1a1aa', fontSize: 15 }}>Welcome back! Here's what's happening with your music.</p>
+                </div>
+                <div style={{ display: 'flex', gap: 12 }}>
+                    <select 
+                        style={{ 
+                            padding: '10px 16px', borderRadius: 8, border: '1px solid #27272a', 
+                            background: '#18181b', color: '#fff', fontSize: 14, outline: 'none', cursor: 'pointer' 
+                        }}
+                    >
+                        <option value="30">Last 30 Days</option>
+                        <option value="7">Last 7 Days</option>
+                        <option value="90">Last 90 Days</option>
+                    </select>
+                    <button 
+                        onClick={handleExport}
+                        style={{ 
+                            display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', 
+                            background: '#fff', color: '#000', border: 'none', borderRadius: 8, 
+                            cursor: 'pointer', fontWeight: 600, fontSize: 14, transition: '0.2s',
+                            boxShadow: '0 4px 12px rgba(255,255,255,0.1)'
+                        }}
+                        onMouseOver={e => e.currentTarget.style.background = '#e4e4e7'}
+                        onMouseOut={e => e.currentTarget.style.background = '#fff'}
+                    >
+                        <LayoutDashboard size={16} /> Export Report
+                    </button>
+                </div>
+            </div>
+
+            {/* KPI Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 24 }}>
+                <div style={{ background: '#18181b', padding: 24, borderRadius: 16, border: '1px solid #27272a', boxShadow: '0 4px 20px rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: 10, borderRadius: 10, color: '#10b981' }}>
+                            <HomeIcon size={24} />
+                        </div>
+                        <span style={{ fontWeight: 600, color: '#a1a1aa', fontSize: 15 }}>Total Releases</span>
+                    </div>
+                    <div style={{ fontSize: 36, fontWeight: 700, color: '#fff' }}>{total_releases}</div>
+                </div>
+                <div style={{ background: '#18181b', padding: 24, borderRadius: 16, border: '1px solid #27272a', boxShadow: '0 4px 20px rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: 10, borderRadius: 10, color: '#3b82f6' }}>
+                            <Users size={24} />
+                        </div>
+                        <span style={{ fontWeight: 600, color: '#a1a1aa', fontSize: 15 }}>Total Subscribers</span>
+                    </div>
+                    <div style={{ fontSize: 36, fontWeight: 700, color: '#fff' }}>{total_subscribers}</div>
+                </div>
+                <div style={{ background: '#18181b', padding: 24, borderRadius: 16, border: '1px solid #27272a', boxShadow: '0 4px 20px rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{ background: 'rgba(245, 158, 11, 0.1)', padding: 10, borderRadius: 10, color: '#f59e0b' }}>
+                            <LayoutDashboard size={24} />
+                        </div>
+                        <span style={{ fontWeight: 600, color: '#a1a1aa', fontSize: 15 }}>Total Streams (30d)</span>
+                    </div>
+                    <div style={{ fontSize: 36, fontWeight: 700, color: '#fff' }}>
+                        {activity.reduce((acc, curr) => acc + curr.streams, 0).toLocaleString()}
+                    </div>
+                </div>
+                <div style={{ background: '#18181b', padding: 24, borderRadius: 16, border: '1px solid #27272a', boxShadow: '0 4px 20px rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{ background: 'rgba(147, 51, 234, 0.1)', padding: 10, borderRadius: 10, color: '#9333ea' }}>
+                            <Share2 size={24} />
+                        </div>
+                        <span style={{ fontWeight: 600, color: '#a1a1aa', fontSize: 15 }}>Total Visitors (30d)</span>
+                    </div>
+                    <div style={{ fontSize: 36, fontWeight: 700, color: '#fff' }}>
+                        {activity.reduce((acc, curr) => acc + curr.visitors, 0).toLocaleString()}
+                    </div>
+                </div>
+            </div>
+
+            {/* Charts Row */}
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24 }}>
+                {/* Line Chart */}
+                <div style={{ background: '#18181b', padding: 24, borderRadius: 16, border: '1px solid #27272a', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
+                    <h3 style={{ margin: '0 0 20px 0', fontSize: 18, fontWeight: 600, color: '#fff' }}>Audience Activity</h3>
+                    <div style={{ width: '100%', height: 350 }}>
+                        <ResponsiveContainer>
+                            <LineChart data={activity} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#27272a" />
+                                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#71717a', fontSize: 12 }} dy={10} />
+                                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#71717a', fontSize: 12 }} dx={-10} />
+                                <Tooltip 
+                                    contentStyle={{ background: '#18181b', borderRadius: 12, border: '1px solid #27272a', boxShadow: '0 10px 25px rgba(0,0,0,0.3)', color: '#fff' }}
+                                    itemStyle={{ fontWeight: 600 }}
+                                />
+                                <Legend iconType="circle" wrapperStyle={{ paddingTop: 20 }} />
+                                <Line type="monotone" dataKey="streams" name="Streams" stroke="#10b981" strokeWidth={3} dot={false} activeDot={{ r: 6, strokeWidth: 0 }} />
+                                <Line type="monotone" dataKey="visitors" name="Visitors" stroke="#3b82f6" strokeWidth={3} dot={false} activeDot={{ r: 6, strokeWidth: 0 }} />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* Pie Chart */}
+                <div style={{ background: '#18181b', padding: 24, borderRadius: 16, border: '1px solid #27272a', boxShadow: '0 4px 20px rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column' }}>
+                    <h3 style={{ margin: '0 0 20px 0', fontSize: 18, fontWeight: 600, color: '#fff' }}>Traffic Sources</h3>
+                    <div style={{ width: '100%', flex: 1, minHeight: 300 }}>
+                        <ResponsiveContainer>
+                            <PieChart>
+                                <Pie
+                                    data={sources}
+                                    innerRadius={60}
+                                    outerRadius={100}
+                                    paddingAngle={5}
+                                    dataKey="value"
+                                >
+                                    {sources.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                                    ))}
+                                </Pie>
+                                <Tooltip 
+                                    contentStyle={{ background: '#18181b', borderRadius: 12, border: '1px solid #27272a', boxShadow: '0 10px 25px rgba(0,0,0,0.3)', color: '#fff' }}
+                                    itemStyle={{ fontWeight: 600, color: '#fff' }}
+                                />
+                                <Legend iconType="circle" />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+            </div>
+
+            {/* Bar Chart Row */}
+            <div style={{ background: '#18181b', padding: 24, borderRadius: 16, border: '1px solid #27272a', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
+                <h3 style={{ margin: '0 0 20px 0', fontSize: 18, fontWeight: 600, color: '#fff' }}>Platform Engagement</h3>
+                <div style={{ width: '100%', height: 350 }}>
+                    <ResponsiveContainer>
+                        <BarChart data={sources} margin={{ top: 20, right: 30, left: 20, bottom: 5 }} barSize={40}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#27272a" />
+                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#71717a', fontSize: 12 }} dy={10} />
+                            <YAxis axisLine={false} tickLine={false} tick={{ fill: '#71717a', fontSize: 12 }} dx={-10} />
+                            <Tooltip 
+                                cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                                contentStyle={{ background: '#18181b', borderRadius: 12, border: '1px solid #27272a', boxShadow: '0 10px 25px rgba(0,0,0,0.3)', color: '#fff' }}
+                            />
+                            <Bar dataKey="value" name="Engagement Score" radius={[6, 6, 0, 0]}>
+                                {sources.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                                ))}
+                            </Bar>
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
+            </div>
+        </div>
+    );
+}
 
 function ReleasesView({ token, onLogout }) {
     const [releases, setReleases] = useState([]);
@@ -810,82 +1085,104 @@ function ReleasesView({ token, onLogout }) {
 
     return (
         <>
-            <div className="admin-page-header">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30 }}>
                 <div>
-                    <h1>Releases</h1>
-                    <p>Manage your artist releases and links here.</p>
+                    <h1 style={{ margin: '0 0 5px 0', fontSize: 28, fontWeight: 700, color: '#fff' }}>Releases</h1>
+                    <p style={{ margin: 0, color: '#a1a1aa' }}>Manage your artist releases and links here.</p>
                 </div>
-                <button onClick={() => openDrawer()} className="admin-btn-secondary">
+                <button 
+                    onClick={() => openDrawer()} 
+                    style={{ 
+                        display: 'flex', alignItems: 'center', gap: 8, padding: '12px 20px', 
+                        background: '#10b981', color: '#fff', border: 'none', borderRadius: 10, 
+                        cursor: 'pointer', fontWeight: 600, fontSize: 15, transition: '0.2s',
+                        boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)'
+                    }}
+                    onMouseOver={e => {
+                        e.currentTarget.style.background = '#059669';
+                        e.currentTarget.style.transform = 'translateY(-1px)';
+                    }}
+                    onMouseOut={e => {
+                        e.currentTarget.style.background = '#10b981';
+                        e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                >
                     <Plus size={18} /> Add Release
                 </button>
             </div>
 
-            <div className="admin-card">
+            <div style={{ background: '#18181b', borderRadius: 16, border: '1px solid #27272a', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
                 {releases.length === 0 ? (
-                    <div style={{ padding: 40, textAlign: 'center', color: '#71717a' }}>
-                        <p>No releases found. Click "Add Release" to get started.</p>
+                    <div style={{ padding: 60, textAlign: 'center', color: '#71717a' }}>
+                        <div style={{ background: 'rgba(255,255,255,0.03)', width: 80, height: 80, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+                            <HomeIcon size={40} />
+                        </div>
+                        <h3 style={{ color: '#fff', margin: '0 0 10px 0' }}>No releases yet</h3>
+                        <p style={{ maxWidth: 300, margin: '0 auto' }}>Click the "Add Release" button to create your first release.</p>
                     </div>
                 ) : (
-                    <table>
-                        <thead>
-                            <tr>
-                                <th style={{ width: '40%' }}>Release</th>
-                                <th style={{ width: '30%' }}>Artist</th>
-                                <th style={{ width: '30%', textAlign: 'right' }}>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {releases.map(r => (
-                                <tr key={r.id}>
-                                    <td>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                                            <div style={{ 
-                                                width: 64, 
-                                                height: 64, 
-                                                borderRadius: 8, 
-                                                overflow: 'hidden',
-                                                flexShrink: 0,
-                                                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                                                border: '2px solid #e4e4e7'
-                                            }}>
-                                                <img 
-                                                    src={r.full_cover_url} 
-                                                    alt={r.title} 
-                                                    style={{ 
-                                                        width: '100%', 
-                                                        height: '100%', 
-                                                        objectFit: 'cover',
-                                                        display: 'block'
-                                                    }} 
-                                                />
-                                            </div>
-                                            <div>
-                                                <div style={{ fontWeight: 600, color: '#fff', fontSize: 15, marginBottom: 4 }}>{r.title}</div>
-                                                <div style={{ fontSize: 12, color: '#71717a' }}>Shortcode: {r.shortcode}</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td style={{ color: '#52525b', fontWeight: 500 }}>{r.artist}</td>
-                                    <td style={{ textAlign: 'right' }}>
-                                        <div style={{ display: 'inline-flex', gap: 10 }}>
-                                            <a href={`/?s=${r.shortcode}`} target="_blank" rel="noreferrer" style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f4f4f5', color: '#52525b', borderRadius: 8, transition: '0.2s' }} title="View Release" onMouseOver={e=>{e.currentTarget.style.background='#e4e4e7'; e.currentTarget.style.color='#18181b'}} onMouseOut={e=>{e.currentTarget.style.background='#f4f4f5'; e.currentTarget.style.color='#52525b'}}>
-                                                <ExternalLink size={18} />
-                                            </a>
-                                            <button onClick={() => handleShare(r.shortcode)} style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#e0f2fe', color: '#0ea5e9', border: 'none', borderRadius: 8, cursor: 'pointer', transition: '0.2s' }} title="Share Link" onMouseOver={e=>{e.currentTarget.style.background='#bae6fd'}} onMouseOut={e=>{e.currentTarget.style.background='#e0f2fe'}}>
-                                                <Share2 size={18} />
-                                            </button>
-                                            <button onClick={() => openDrawer(r.id)} style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#d1fae5', color: '#10b981', border: 'none', borderRadius: 8, cursor: 'pointer', transition: '0.2s' }} title="Edit Release" onMouseOver={e=>{e.currentTarget.style.background='#a7f3d0'}} onMouseOut={e=>{e.currentTarget.style.background='#d1fae5'}}>
-                                                <Edit2 size={18} />
-                                            </button>
-                                            <button onClick={() => openDeleteModal(r.id)} style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: 8, cursor: 'pointer', transition: '0.2s' }} title="Delete Release" onMouseOver={e=>{e.currentTarget.style.background='#fecaca'}} onMouseOut={e=>{e.currentTarget.style.background='#fee2e2'}}>
-                                                <Trash2 size={18} />
-                                            </button>
-                                        </div>
-                                    </td>
+                    <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                            <thead>
+                                <tr style={{ borderBottom: '1px solid #27272a', background: 'rgba(255,255,255,0.02)' }}>
+                                    <th style={{ width: '40%', textAlign: 'left', padding: '16px 24px', color: '#a1a1aa', fontWeight: 600, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Release</th>
+                                    <th style={{ width: '30%', textAlign: 'left', padding: '16px 24px', color: '#a1a1aa', fontWeight: 600, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Artist</th>
+                                    <th style={{ width: '30%', textAlign: 'right', padding: '16px 24px', color: '#a1a1aa', fontWeight: 600, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Actions</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {releases.map(r => (
+                                    <tr key={r.id} style={{ borderBottom: '1px solid #27272a', transition: '0.2s' }} onMouseOver={e=>e.currentTarget.style.background='rgba(255,255,255,0.02)'} onMouseOut={e=>e.currentTarget.style.background='transparent'}>
+                                        <td style={{ padding: '20px 24px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                                                <div style={{ 
+                                                    width: 64, 
+                                                    height: 64, 
+                                                    borderRadius: 10, 
+                                                    overflow: 'hidden',
+                                                    flexShrink: 0,
+                                                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                                                    border: '1px solid #27272a'
+                                                }}>
+                                                    <img 
+                                                        src={r.full_cover_url} 
+                                                        alt={r.title} 
+                                                        style={{ 
+                                                            width: '100%', 
+                                                            height: '100%', 
+                                                            objectFit: 'cover',
+                                                            display: 'block'
+                                                        }} 
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <div style={{ fontWeight: 600, color: '#fff', fontSize: 15, marginBottom: 4 }}>{r.title}</div>
+                                                    <div style={{ fontSize: 12, color: '#71717a', fontFamily: 'monospace' }}>/{r.shortcode}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td style={{ padding: '20px 24px', color: '#a1a1aa', fontWeight: 500 }}>{r.artist}</td>
+                                        <td style={{ padding: '20px 24px', textAlign: 'right' }}>
+                                            <div style={{ display: 'inline-flex', gap: 10 }}>
+                                                <a href={`/?s=${r.shortcode}`} target="_blank" rel="noreferrer" style={{ width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#27272a', color: '#fff', borderRadius: 10, transition: '0.2s' }} title="View Release" onMouseOver={e=>{e.currentTarget.style.background='#3f3f46'}} onMouseOut={e=>{e.currentTarget.style.background='#27272a'}}>
+                                                    <ExternalLink size={18} />
+                                                </a>
+                                                <button onClick={() => handleShare(r.shortcode)} style={{ width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', border: 'none', borderRadius: 10, cursor: 'pointer', transition: '0.2s' }} title="Share Link" onMouseOver={e=>{e.currentTarget.style.background='rgba(59, 130, 246, 0.2)'}} onMouseOut={e=>{e.currentTarget.style.background='rgba(59, 130, 246, 0.1)'}}>
+                                                    <Share2 size={18} />
+                                                </button>
+                                                <button onClick={() => openDrawer(r.id)} style={{ width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', border: 'none', borderRadius: 10, cursor: 'pointer', transition: '0.2s' }} title="Edit Release" onMouseOver={e=>{e.currentTarget.style.background='rgba(16, 185, 129, 0.2)'}} onMouseOut={e=>{e.currentTarget.style.background='rgba(16, 185, 129, 0.1)'}}>
+                                                    <Edit2 size={18} />
+                                                </button>
+                                                <button onClick={() => openDeleteModal(r.id)} style={{ width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: 'none', borderRadius: 10, cursor: 'pointer', transition: '0.2s' }} title="Delete Release" onMouseOver={e=>{e.currentTarget.style.background='rgba(239, 68, 68, 0.2)'}} onMouseOut={e=>{e.currentTarget.style.background='rgba(239, 68, 68, 0.1)'}}>
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
             </div>
 
@@ -964,42 +1261,43 @@ function EditReleaseForm({ token, releaseId, onSuccess, onLogout }) {
 
     return (
         <form onSubmit={handleSave}>
-            <div style={{marginBottom:15}}>
-                <label style={{display:'block', marginBottom:6, fontWeight:500, fontSize:14, color:'#3f3f46'}}>Title</label>
-                <input type="text" value={title} onChange={e=>setTitle(e.target.value)} required style={{width:'100%', padding:'10px 14px', borderRadius:6, border:'1px solid #e4e4e7', boxSizing:'border-box', outline:'none', color:'#18181b', background:'#fff'}}/>
+            <div style={{marginBottom:20}}>
+                <label style={{display:'block', marginBottom:8, fontWeight:500, fontSize:14, color:'#a1a1aa'}}>Title</label>
+                <input type="text" value={title} onChange={e=>setTitle(e.target.value)} required style={{width:'100%', padding:'12px 16px', borderRadius:10, border:'1px solid #27272a', boxSizing:'border-box', outline:'none', color:'#fff', background:'#09090b'}} onFocus={e=>e.currentTarget.style.borderColor='#10b981'} onBlur={e=>e.currentTarget.style.borderColor='#27272a'}/>
             </div>
-            <div style={{marginBottom:15}}>
-                <label style={{display:'block', marginBottom:6, fontWeight:500, fontSize:14, color:'#3f3f46'}}>Artist</label>
-                <input type="text" value={artist} onChange={e=>setArtist(e.target.value)} required style={{width:'100%', padding:'10px 14px', borderRadius:6, border:'1px solid #e4e4e7', boxSizing:'border-box', outline:'none', color:'#18181b', background:'#fff'}}/>
+            <div style={{marginBottom:20}}>
+                <label style={{display:'block', marginBottom:8, fontWeight:500, fontSize:14, color:'#a1a1aa'}}>Artist</label>
+                <input type="text" value={artist} onChange={e=>setArtist(e.target.value)} required style={{width:'100%', padding:'12px 16px', borderRadius:10, border:'1px solid #27272a', boxSizing:'border-box', outline:'none', color:'#fff', background:'#09090b'}} onFocus={e=>e.currentTarget.style.borderColor='#10b981'} onBlur={e=>e.currentTarget.style.borderColor='#27272a'}/>
             </div>
             <div style={{marginBottom:25}}>
-                <label style={{display:'block', marginBottom:6, fontWeight:500, fontSize:14, color:'#3f3f46'}}>Cover Image {isNew ? '' : '(Upload to replace)'}</label>
-                <input type="file" onChange={e=>setCoverFile(e.target.files[0])} accept="image/*" required={isNew} style={{width:'100%', padding:'8px', borderRadius:6, border:'1px solid #e4e4e7', boxSizing:'border-box', background:'#fafafa'}}/>
+                <label style={{display:'block', marginBottom:8, fontWeight:500, fontSize:14, color:'#a1a1aa'}}>Cover Image {isNew ? '' : '(Upload to replace)'}</label>
+                <input type="file" onChange={e=>setCoverFile(e.target.files[0])} accept="image/*" required={isNew} style={{width:'100%', padding:'10px', borderRadius:10, border:'1px solid #27272a', boxSizing:'border-box', background:'#09090b', color:'#a1a1aa'}}/>
             </div>
 
             <div style={{marginBottom:25}}>
-                <label style={{display:'block', marginBottom:6, fontWeight:500, fontSize:14, color:'#3f3f46'}}>Spotify Embed Code (Optional)</label>
+                <label style={{display:'block', marginBottom:8, fontWeight:500, fontSize:14, color:'#a1a1aa'}}>Spotify Embed Code (Optional)</label>
                 <textarea 
                     value={spotifyEmbed} 
                     onChange={e=>setSpotifyEmbed(e.target.value)} 
-                    placeholder="Paste Spotify embed iframe code here (e.g., <iframe src='https://open.spotify.com/embed/track/...'...></iframe>)" 
-                    style={{width:'100%', padding:'10px 14px', borderRadius:6, border:'1px solid #e4e4e7', boxSizing:'border-box', minHeight:100, outline:'none', color:'#18181b', background:'#fff', fontFamily:'monospace', fontSize:12}}
+                    placeholder="Paste Spotify embed iframe code here..." 
+                    style={{width:'100%', padding:'12px 16px', borderRadius:10, border:'1px solid #27272a', boxSizing:'border-box', minHeight:100, outline:'none', color:'#fff', background:'#09090b', fontFamily:'monospace', fontSize:12}}
+                    onFocus={e=>e.currentTarget.style.borderColor='#10b981'} onBlur={e=>e.currentTarget.style.borderColor='#27272a'}
                 />
                 <p style={{margin:'8px 0 0 0', fontSize:12, color:'#71717a'}}>Go to Spotify → Share → Embed track → Copy the iframe code</p>
             </div>
 
-            <h3 style={{fontSize:16, marginTop:0, marginBottom:15, borderBottom:'1px solid #f4f4f5', paddingBottom:10}}>Platform Links</h3>
-            <div style={{marginBottom:25}}>
+            <h3 style={{fontSize:16, fontWeight:600, marginTop:0, marginBottom:20, borderBottom:'1px solid #27272a', paddingBottom:12, color: '#fff'}}>Platform Links</h3>
+            <div style={{marginBottom:30}}>
                 {links.map((link, idx) => (
-                    <div key={idx} style={{display:'flex', gap:8, marginBottom:10, alignItems:'center', width:'100%'}}>
-                        <input type="text" placeholder="Platform (e.g. Spotify)" value={link.platform_name} onChange={e=> { const l=[...links]; l[idx].platform_name=e.target.value; setLinks(l); }} required style={{flex:1, minWidth:0, padding:'10px 12px', borderRadius:6, border:'1px solid #e4e4e7', boxSizing:'border-box', outline:'none', color:'#18181b', background:'#fff'}}/>
-                        <input type="text" placeholder="URL" value={link.platform_url} onChange={e=> { const l=[...links]; l[idx].platform_url=e.target.value; setLinks(l); }} required style={{flex:1, minWidth:0, padding:'10px 12px', borderRadius:6, border:'1px solid #e4e4e7', boxSizing:'border-box', outline:'none', color:'#18181b', background:'#fff'}}/>
-                        <button type="button" onClick={() => setLinks(links.filter((_,i) => i!==idx))} style={{flexShrink:0, width: 38, height: 38, background:'#fee2e2', color:'#ef4444', border:'none', borderRadius:6, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center'}}><X size={18}/></button>
+                    <div key={idx} style={{display:'flex', gap:10, marginBottom:12, alignItems:'center', width:'100%'}}>
+                        <input type="text" placeholder="Platform (e.g. Spotify)" value={link.platform_name} onChange={e=> { const l=[...links]; l[idx].platform_name=e.target.value; setLinks(l); }} required style={{flex:1, minWidth:0, padding:'12px 14px', borderRadius:10, border:'1px solid #27272a', boxSizing:'border-box', outline:'none', color:'#fff', background:'#09090b'}} onFocus={e=>e.currentTarget.style.borderColor='#10b981'} onBlur={e=>e.currentTarget.style.borderColor='#27272a'}/>
+                        <input type="text" placeholder="URL" value={link.platform_url} onChange={e=> { const l=[...links]; l[idx].platform_url=e.target.value; setLinks(l); }} required style={{flex:1, minWidth:0, padding:'12px 14px', borderRadius:10, border:'1px solid #27272a', boxSizing:'border-box', outline:'none', color:'#fff', background:'#09090b'}} onFocus={e=>e.currentTarget.style.borderColor='#10b981'} onBlur={e=>e.currentTarget.style.borderColor='#27272a'}/>
+                        <button type="button" onClick={() => setLinks(links.filter((_,i) => i!==idx))} style={{flexShrink:0, width: 44, height: 44, background:'rgba(239, 68, 68, 0.1)', color:'#ef4444', border:'none', borderRadius:10, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', transition:'0.2s'}} onMouseOver={e=>e.currentTarget.style.background='rgba(239, 68, 68, 0.2)'} onMouseOut={e=>e.currentTarget.style.background='rgba(239, 68, 68, 0.1)'}><X size={20}/></button>
                     </div>
                 ))}
-                <button type="button" onClick={() => setLinks([...links, {platform_name:'', platform_url:''}])} style={{padding:'8px 16px', background:'#f4f4f5', color:'#18181b', border:'none', borderRadius:6, cursor:'pointer', fontSize:13, fontWeight:500, display:'flex', alignItems:'center', gap:6}}><Plus size={16}/> Add Link</button>
+                <button type="button" onClick={() => setLinks([...links, {platform_name:'', platform_url:''}])} style={{padding:'10px 18px', background:'rgba(255,255,255,0.05)', color:'#fff', border:'1px solid #27272a', borderRadius:10, cursor:'pointer', fontSize:14, fontWeight:500, display:'flex', alignItems:'center', gap:8, transition:'0.2s'}} onMouseOver={e=>e.currentTarget.style.background='rgba(255,255,255,0.1)'} onMouseOut={e=>e.currentTarget.style.background='rgba(255,255,255,0.05)'}><Plus size={18}/> Add Link</button>
             </div>
-            <button type="submit" style={{width:'100%', padding:'12px', background:'#18181b', color:'#fff', border:'none', borderRadius:8, cursor:'pointer', fontWeight:600, fontSize:15, transition:'0.2s', boxSizing:'border-box'}}>Save Release</button>
+            <button type="submit" style={{width:'100%', padding:'14px', background: '#fff', color:'#000', border:'none', borderRadius:12, cursor:'pointer', fontWeight:700, fontSize:16, transition:'0.2s', boxSizing:'border-box', boxShadow: '0 10px 20px rgba(0,0,0,0.2)'}} onMouseOver={e=>e.currentTarget.style.background='#e4e4e7'} onMouseOut={e=>e.currentTarget.style.background='#fff'}>Save Release</button>
         </form>
     );
 }
@@ -1048,31 +1346,31 @@ function EditHomeView({ token, onLogout }) {
 
     return (
         <div style={{ maxWidth: 800 }}>
-            <h1 style={{ margin: '0 0 5px 0', fontSize: 28, fontWeight: 700 }}>Homepage Settings</h1>
-            <p style={{ margin: '0 0 30px 0', color: '#71717a' }}>Customize your main portfolio interface.</p>
+            <h1 style={{ margin: '0 0 5px 0', fontSize: 28, fontWeight: 700, color: '#fff' }}>Homepage Settings</h1>
+            <p style={{ margin: '0 0 30px 0', color: '#a1a1aa' }}>Customize your main portfolio interface.</p>
             
-            <form onSubmit={handleSave} style={{ background: '#fff', padding: 30, borderRadius: 12, border: '1px solid #e4e4e7', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
-                <div style={{marginBottom:20}}>
-                    <label style={{display:'block', marginBottom:6, fontWeight:500, fontSize:14, color:'#3f3f46'}}>Artist Name</label>
-                    <input type="text" value={artist} onChange={e=>setArtist(e.target.value)} required style={{width:'100%', padding:'10px 14px', borderRadius:6, border:'1px solid #e4e4e7', boxSizing:'border-box', outline:'none', color:'#18181b', background:'#fff'}}/>
+            <form onSubmit={handleSave} style={{ background: '#18181b', padding: 40, borderRadius: 16, border: '1px solid #27272a', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
+                <div style={{marginBottom:24}}>
+                    <label style={{display:'block', marginBottom:8, fontWeight:500, fontSize:14, color:'#a1a1aa'}}>Artist Name</label>
+                    <input type="text" value={artist} onChange={e=>setArtist(e.target.value)} required style={{width:'100%', padding:'12px 16px', borderRadius:10, border:'1px solid #27272a', boxSizing:'border-box', outline:'none', color:'#fff', background:'#09090b'}} onFocus={e=>e.currentTarget.style.borderColor='#10b981'} onBlur={e=>e.currentTarget.style.borderColor='#27272a'}/>
                 </div>
-                <div style={{marginBottom:20}}>
-                    <label style={{display:'block', marginBottom:6, fontWeight:500, fontSize:14, color:'#3f3f46'}}>Hero Title</label>
-                    <input type="text" value={heroTitle} onChange={e=>setHeroTitle(e.target.value)} style={{width:'100%', padding:'10px 14px', borderRadius:6, border:'1px solid #e4e4e7', boxSizing:'border-box', outline:'none', color:'#18181b', background:'#fff'}}/>
+                <div style={{marginBottom:24}}>
+                    <label style={{display:'block', marginBottom:8, fontWeight:500, fontSize:14, color:'#a1a1aa'}}>Hero Title</label>
+                    <input type="text" value={heroTitle} onChange={e=>setHeroTitle(e.target.value)} style={{width:'100%', padding:'12px 16px', borderRadius:10, border:'1px solid #27272a', boxSizing:'border-box', outline:'none', color:'#fff', background:'#09090b'}} onFocus={e=>e.currentTarget.style.borderColor='#10b981'} onBlur={e=>e.currentTarget.style.borderColor='#27272a'}/>
                 </div>
-                <div style={{marginBottom:25}}>
-                    <label style={{display:'block', marginBottom:6, fontWeight:500, fontSize:14, color:'#3f3f46'}}>Hero Subtitle</label>
-                    <textarea value={heroSub} onChange={e=>setHeroSub(e.target.value)} style={{width:'100%', padding:'10px 14px', borderRadius:6, border:'1px solid #e4e4e7', boxSizing:'border-box', minHeight:80, outline:'none', color:'#18181b', background:'#fff'}}/>
+                <div style={{marginBottom:24}}>
+                    <label style={{display:'block', marginBottom:8, fontWeight:500, fontSize:14, color:'#a1a1aa'}}>Hero Subtitle</label>
+                    <textarea value={heroSub} onChange={e=>setHeroSub(e.target.value)} style={{width:'100%', padding:'12px 16px', borderRadius:10, border:'1px solid #27272a', boxSizing:'border-box', minHeight:100, outline:'none', color:'#fff', background:'#09090b'}} onFocus={e=>e.currentTarget.style.borderColor='#10b981'} onBlur={e=>e.currentTarget.style.borderColor='#27272a'}/>
                 </div>
-                <div style={{marginBottom:20}}>
-                    <label style={{display:'block', marginBottom:6, fontWeight:500, fontSize:14, color:'#3f3f46'}}>Background Image</label>
-                    <input type="file" onChange={e=>setBgFile(e.target.files[0])} accept="image/*" style={{width:'100%', padding:'8px', borderRadius:6, border:'1px solid #e4e4e7', background:'#fafafa'}}/>
+                <div style={{marginBottom:24}}>
+                    <label style={{display:'block', marginBottom:8, fontWeight:500, fontSize:14, color:'#a1a1aa'}}>Background Image</label>
+                    <input type="file" onChange={e=>setBgFile(e.target.files[0])} accept="image/*" style={{width:'100%', padding:'10px', borderRadius:10, border:'1px solid #27272a', background:'#09090b', color:'#a1a1aa'}}/>
                 </div>
-                <div style={{marginBottom:30}}>
-                    <label style={{display:'block', marginBottom:6, fontWeight:500, fontSize:14, color:'#3f3f46'}}>Profile Image</label>
-                    <input type="file" onChange={e=>setProfileFile(e.target.files[0])} accept="image/*" style={{width:'100%', padding:'8px', borderRadius:6, border:'1px solid #e4e4e7', background:'#fafafa'}}/>
+                <div style={{marginBottom:40}}>
+                    <label style={{display:'block', marginBottom:8, fontWeight:500, fontSize:14, color:'#a1a1aa'}}>Profile Image</label>
+                    <input type="file" onChange={e=>setProfileFile(e.target.files[0])} accept="image/*" style={{width:'100%', padding:'10px', borderRadius:10, border:'1px solid #27272a', background:'#09090b', color:'#a1a1aa'}}/>
                 </div>
-                <button type="submit" style={{width:'100%', padding:'12px', background:'#18181b', color:'#fff', border:'none', borderRadius:8, cursor:'pointer', fontWeight:600, fontSize:15, transition:'0.2s'}}>Update Homepage</button>
+                <button type="submit" style={{width:'100%', padding:'14px', background: '#fff', color:'#000', border:'none', borderRadius:12, cursor:'pointer', fontWeight:700, fontSize:16, transition:'0.2s', boxShadow: '0 10px 20px rgba(0,0,0,0.2)'}} onMouseOver={e=>e.currentTarget.style.background='#e4e4e7'} onMouseOut={e=>e.currentTarget.style.background='#fff'}>Update Homepage</button>
             </form>
         </div>
     );
@@ -1551,43 +1849,46 @@ function ChangePasswordView({ token, setToken }) {
 
     return (
         <div style={{ maxWidth: 800 }}>
-            <h1 style={{ margin: '0 0 5px 0', fontSize: 28, fontWeight: 700 }}>Security Settings</h1>
-            <p style={{ margin: '0 0 30px 0', color: '#71717a' }}>Manage your admin security preferences.</p>
+            <h1 style={{ margin: '0 0 5px 0', fontSize: 28, fontWeight: 700, color: '#fff' }}>Security Settings</h1>
+            <p style={{ margin: '0 0 30px 0', color: '#a1a1aa' }}>Manage your admin security preferences.</p>
             
             {/* OTP Email Configuration */}
-            <div style={{ background: '#fff', padding: 30, borderRadius: 12, border: '1px solid #e4e4e7', boxShadow: '0 2px 10px rgba(0,0,0,0.02)', marginBottom: 30 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-                    <div style={{ background: '#dbeafe', padding: 10, borderRadius: 8, display: 'flex' }}>
-                        <Mail size={24} color="#3b82f6" />
+            <div style={{ background: '#18181b', padding: 40, borderRadius: 16, border: '1px solid #27272a', boxShadow: '0 4px 20px rgba(0,0,0,0.2)', marginBottom: 30 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
+                    <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: 12, borderRadius: 10, display: 'flex', color: '#3b82f6' }}>
+                        <Mail size={24} />
                     </div>
                     <div>
-                        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 600, color: '#18181b' }}>Two-Factor Authentication Email</h2>
-                        <p style={{ margin: '4px 0 0 0', fontSize: 14, color: '#71717a' }}>OTP verification codes will be sent to this email</p>
+                        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 600, color: '#fff' }}>Two-Factor Authentication Email</h2>
+                        <p style={{ margin: '4px 0 0 0', fontSize: 14, color: '#a1a1aa' }}>OTP verification codes will be sent to this email</p>
                     </div>
                 </div>
                 
                 {currentEmail && (
                     <div style={{ 
-                        background: '#f0fdf4', 
-                        border: '1px solid #86efac', 
-                        borderRadius: 8, 
-                        padding: 16, 
-                        marginBottom: 20,
+                        background: 'rgba(16, 185, 129, 0.05)', 
+                        border: '1px solid rgba(16, 185, 129, 0.2)', 
+                        borderRadius: 12, 
+                        padding: '16px 20px', 
+                        marginBottom: 24,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between'
                     }}>
                         <div>
-                            <div style={{ fontSize: 12, color: '#166534', marginBottom: 4, fontWeight: 600 }}>Current OTP Email</div>
-                            <div style={{ fontSize: 16, color: '#15803d', fontWeight: 600, fontFamily: 'monospace' }}>{maskedEmail}</div>
+                            <div style={{ fontSize: 12, color: '#10b981', marginBottom: 4, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Current OTP Email</div>
+                            <div style={{ fontSize: 16, color: '#fff', fontWeight: 500, fontFamily: 'monospace' }}>{maskedEmail}</div>
                         </div>
                         <div style={{ 
                             background: '#10b981', 
                             color: '#fff', 
                             padding: '6px 12px', 
-                            borderRadius: 6, 
+                            borderRadius: 8, 
                             fontSize: 12, 
-                            fontWeight: 600 
+                            fontWeight: 600,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 6
                         }}>
                             ✓ Active
                         </div>
@@ -1595,39 +1896,40 @@ function ChangePasswordView({ token, setToken }) {
                 )}
                 
                 <form onSubmit={handleUpdateEmail}>
-                    <div style={{marginBottom:20}}>
-                        <label style={{display:'block', marginBottom:6, fontWeight:500, fontSize:14, color:'#3f3f46'}}>Update OTP Email Address</label>
+                    <div style={{marginBottom:24}}>
+                        <label style={{display:'block', marginBottom:8, fontWeight:500, fontSize:14, color:'#a1a1aa'}}>Update OTP Email Address</label>
                         <input 
                             type="email" 
                             value={adminEmail} 
                             onChange={e=>setAdminEmail(e.target.value)} 
                             required 
                             placeholder="admin@example.com" 
-                            style={{width:'100%', padding:'10px 14px', borderRadius:6, border:'1px solid #e4e4e7', boxSizing:'border-box', outline:'none', color:'#18181b', background:'#fff'}}
+                            style={{width:'100%', padding:'12px 16px', borderRadius:10, border:'1px solid #27272a', boxSizing:'border-box', outline:'none', color:'#fff', background:'#09090b', transition:'0.2s'}}
+                            onFocus={e=>e.currentTarget.style.borderColor='#3b82f6'} onBlur={e=>e.currentTarget.style.borderColor='#27272a'}
                         />
                     </div>
-                    <button type="submit" style={{width:'100%', padding:'12px', background:'#3b82f6', color:'#fff', border:'none', borderRadius:8, cursor:'pointer', fontWeight:600, fontSize:15, transition:'0.2s'}}>Update Email</button>
+                    <button type="submit" style={{width:'100%', padding:'14px', background:'#3b82f6', color:'#fff', border:'none', borderRadius:12, cursor:'pointer', fontWeight:600, fontSize:15, transition:'0.2s', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.2)'}} onMouseOver={e=>{e.currentTarget.style.background='#2563eb'; e.currentTarget.style.transform='translateY(-1px)'}} onMouseOut={e=>{e.currentTarget.style.background='#3b82f6'; e.currentTarget.style.transform='translateY(0)'}}>Update Email</button>
                 </form>
             </div>
             
             {/* Password Change */}
-            <div style={{ background: '#fff', padding: 30, borderRadius: 12, border: '1px solid #e4e4e7', boxShadow: '0 2px 10px rgba(0,0,0,0.02)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-                    <div style={{ background: '#fef3c7', padding: 10, borderRadius: 8, display: 'flex' }}>
-                        <KeyRound size={24} color="#f59e0b" />
+            <div style={{ background: '#18181b', padding: 40, borderRadius: 16, border: '1px solid #27272a', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
+                    <div style={{ background: 'rgba(245, 158, 11, 0.1)', padding: 12, borderRadius: 10, display: 'flex', color: '#f59e0b' }}>
+                        <KeyRound size={24} />
                     </div>
                     <div>
-                        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 600, color: '#18181b' }}>Change Password</h2>
-                        <p style={{ margin: '4px 0 0 0', fontSize: 14, color: '#71717a' }}>Update your master administration password</p>
+                        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 600, color: '#fff' }}>Change Password</h2>
+                        <p style={{ margin: '4px 0 0 0', fontSize: 14, color: '#a1a1aa' }}>Update your master administration password</p>
                     </div>
                 </div>
                 
                 <form onSubmit={handleSavePassword}>
-                    <div style={{marginBottom:25}}>
-                        <label style={{display:'block', marginBottom:6, fontWeight:500, fontSize:14, color:'#3f3f46'}}>New Password</label>
-                        <input type="password" value={newPassword} onChange={e=>setNewPassword(e.target.value)} required minLength="4" autoComplete="new-password" placeholder="Min 4 characters" style={{width:'100%', padding:'10px 14px', borderRadius:6, border:'1px solid #e4e4e7', boxSizing:'border-box', outline:'none', color:'#18181b', background:'#fff'}}/>
+                    <div style={{marginBottom:24}}>
+                        <label style={{display:'block', marginBottom:8, fontWeight:500, fontSize:14, color:'#a1a1aa'}}>New Password</label>
+                        <input type="password" value={newPassword} onChange={e=>setNewPassword(e.target.value)} required minLength="4" autoComplete="new-password" placeholder="Min 4 characters" style={{width:'100%', padding:'12px 16px', borderRadius:10, border:'1px solid #27272a', boxSizing:'border-box', outline:'none', color:'#fff', background:'#09090b', transition:'0.2s'}} onFocus={e=>e.currentTarget.style.borderColor='#f59e0b'} onBlur={e=>e.currentTarget.style.borderColor='#27272a'}/>
                     </div>
-                    <button type="submit" style={{width:'100%', padding:'12px', background:'#18181b', color:'#fff', border:'none', borderRadius:8, cursor:'pointer', fontWeight:600, fontSize:15, transition:'0.2s'}}>Save New Password</button>
+                    <button type="submit" style={{width:'100%', padding:'14px', background:'#fff', color:'#000', border:'none', borderRadius:12, cursor:'pointer', fontWeight:600, fontSize:15, transition:'0.2s', boxShadow: '0 4px 12px rgba(255, 255, 255, 0.1)'}} onMouseOver={e=>{e.currentTarget.style.background='#e4e4e7'; e.currentTarget.style.transform='translateY(-1px)'}} onMouseOut={e=>{e.currentTarget.style.background='#fff'; e.currentTarget.style.transform='translateY(0)'}}>Save New Password</button>
                 </form>
             </div>
         </div>
@@ -1655,13 +1957,14 @@ export default function AdminApp() {
 
     return (
         <div style={{fontFamily: 'Inter, sans-serif'}}>
-            <Toaster position="top-center" toastOptions={{ style: { background: '#18181b', color: '#fff', borderRadius: '8px', fontSize: 14 } }} />
+            <Toaster position="top-center" toastOptions={{ style: { background: '#18181b', color: '#fff', borderRadius: '12px', border: '1px solid #27272a', fontSize: 14 } }} />
             {!token ? (
                 <Login setToken={handleLogin} />
             ) : (
                 <AdminLayout onLogout={handleLogout}>
                     <Routes>
-                        <Route path="/" element={<ReleasesView token={token} onLogout={handleLogout} />} />
+                        <Route path="/" element={<DashboardView token={token} onLogout={handleLogout} />} />
+                        <Route path="releases" element={<ReleasesView token={token} onLogout={handleLogout} />} />
                         <Route path="subscribers" element={<SubscribersView token={token} onLogout={handleLogout} />} />
                         <Route path="home" element={<EditHomeView token={token} onLogout={handleLogout} />} />
                         <Route path="password" element={<ChangePasswordView token={token} setToken={handleLogin} />} />
