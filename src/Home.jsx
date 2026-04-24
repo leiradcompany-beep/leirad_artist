@@ -113,81 +113,350 @@ export default function Home() {
             
             {/* Hero Section */}
             <div className="hero-section">
-                {home.full_profile_url && <img src={home.full_profile_url} alt={home.artist_name} className="hero-profile-img" />}
+                {home.full_profile_url && <img src={home.full_profile_url} style={{width:160, height:160, borderRadius:'50%', objectFit:'cover', border:'4px solid rgba(255,255,255,0.2)', boxShadow:'0 20px 40px rgba(0,0,0,0.5)', marginBottom:25}} />}
                 <h1>{home.artist_name}</h1>
                 <h2>{home.hero_title}</h2>
                 <p>{home.hero_subtitle}</p>
-
-                <div className="social-links">
-                    <a href="#" className="social-link"><FaInstagram /></a>
-                    <a href="#" className="social-link"><FaFacebook /></a>
-                    <a href="#" className="social-link"><FaTiktok /></a>
-                </div>
             </div>
 
-            {/* Releases Section */}
+            {/* Releases Section - Responsive Grid/Carousel */}
             <div className="releases-section">
-                <h2 className="section-title">Latest Releases</h2>
-                
-                <div className="releases-grid">
-                    {releases && releases.map(r => (
-                        <a 
-                            key={r.id} 
-                            href={`/?s=${r.shortcode}`} 
-                            className="release-card"
-                        >
-                            <img 
-                                src={r.full_cover_url}
-                                alt={r.title}
-                            />
-                            <h3>{r.title}</h3>
-                            <p>{r.artist}</p>
-                        </a>
-                    ))}
+                {/* Section Title - Desktop */}
+                <h2 className="releases-title-desktop">Latest Releases</h2>
+
+                {/* Mobile Carousel Container */}
+                <div className="releases-carousel-mobile">
+                    <h2>Latest Releases</h2>
+                    <div>
+                        {releases && releases.map(r => (
+                            <a 
+                                key={r.id} 
+                                href={`/?s=${r.shortcode}`} 
+                                className="release-card"
+                                style={{
+                                    minWidth: 160,
+                                    maxWidth: 160,
+                                    flexShrink: 0,
+                                    scrollSnapAlign: 'start'
+                                }}
+                            >
+                                <img 
+                                    src={r.full_cover_url}
+                                    alt={r.title}
+                                />
+                                <h3>{r.title}</h3>
+                                <p>{r.artist}</p>
+                            </a>
+                        ))}
+                    </div>
+                    {/* Scroll indicator for mobile */}
+                    <p style={{
+                        fontSize: 12,
+                        color: 'rgba(255,255,255,0.5)',
+                        textAlign: 'center',
+                        margin: '10px 0 0 0'
+                    }}>← Swipe to see more →</p>
+                </div>
+
+                {/* Desktop Grid Container */}
+                <div className="releases-grid-desktop">
+                    <div>
+                        {releases && releases.map(r => (
+                            <a 
+                                key={r.id} 
+                                href={`/?s=${r.shortcode}`} 
+                                className="release-card"
+                            >
+                                <img 
+                                    src={r.full_cover_url}
+                                    alt={r.title}
+                                />
+                                <h3>{r.title}</h3>
+                                <p>{r.artist}</p>
+                            </a>
+                        ))}
+                    </div>
                 </div>
             </div>
+
+            {/* Responsive Styles */}
+            <style>{`
+                /* Mobile: Show carousel, hide grid */
+                @media (max-width: 768px) {
+                    .releases-carousel-mobile {
+                        display: block !important;
+                    }
+                    .releases-carousel-mobile div {
+                        display: flex;
+                        gap: 15px;
+                        overflow-x: auto;
+                        scroll-snap-type: x mandatory;
+                        -webkit-overflow-scrolling: touch;
+                        padding-bottom: 20px;
+                        margin-bottom: 10px;
+                        scrollbar-width: none;
+                        -ms-overflow-style: none;
+                    }
+                    .releases-carousel-mobile div::-webkit-scrollbar {
+                        display: none;
+                    }
+                    .releases-grid-desktop {
+                        display: none !important;
+                    }
+                    .releases-title-desktop {
+                        display: none !important;
+                    }
+                    /* Footer mobile optimization */
+                    .footer-grid {
+                        grid-template-columns: 1fr !important;
+                        gap: 30px !important;
+                    }
+                }
+                
+                /* Desktop: Show grid, hide carousel */
+                @media (min-width: 769px) {
+                    .releases-carousel-mobile {
+                        display: none !important;
+                    }
+                    .releases-grid-desktop {
+                        display: block !important;
+                    }
+                    .releases-grid-desktop div {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                        gap: 20px;
+                    }
+                    .releases-title-desktop {
+                        display: block !important;
+                    }
+                }
+                
+                /* Tablet optimizations */
+                @media (min-width: 769px) and (max-width: 1024px) {
+                    .releases-grid-desktop div {
+                        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important;
+                    }
+                }
+                
+                /* Small mobile devices */
+                @media (max-width: 480px) {
+                    .releases-carousel-mobile a {
+                        min-width: 140px !important;
+                        maxWidth: 140px !important;
+                        padding: 10px !important;
+                    }
+                    .releases-carousel-mobile h3 {
+                        font-size: 13px !important;
+                    }
+                    .releases-carousel-mobile p {
+                        font-size: 11px !important;
+                    }
+                }
+            `}</style>
 
             {/* Footer Section */}
-            <footer className="footer">
-                <div className="footer-container">
+            <footer>
+                <div style={{
+                    maxWidth: 1000,
+                    margin: '0 auto',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                    gap: 40,
+                    marginBottom: 40
+                }} className="footer-grid">
                     {/* Brand Section */}
-                    <div className="footer-brand">
-                        <h3>{home.artist_name}</h3>
-                        <p>{home.hero_subtitle || 'Official artist website. Listen to the latest releases on all major platforms.'}</p>
+                    <div>
+                        <h3 style={{
+                            fontSize: 22,
+                            fontWeight: 700,
+                            margin: '0 0 15px 0',
+                            letterSpacing: 1
+                        }}>{home.artist_name}</h3>
+                        <p style={{
+                            fontSize: 14,
+                            lineHeight: 1.6,
+                            margin: '0 0 20px 0'
+                        }}>{home.hero_subtitle || 'Official artist website. Listen to the latest releases on all major platforms.'}</p>
                         
-                        <div className="footer-socials">
-                            <a href="https://www.facebook.com/LeiradOfficial/" target="_blank" rel="noopener noreferrer" className="footer-social-link">
+                        {/* Social Media Icons */}
+                        <div style={{display: 'flex', gap: 12}}>
+                            <a href="https://www.facebook.com/LeiradOfficial/" target="_blank" rel="noopener noreferrer" style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: '50%',
+                                background: 'rgba(255,255,255,0.15)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#fff',
+                                textDecoration: 'none',
+                                transition: '0.3s',
+                                fontSize: 18
+                            }}
+                            onMouseOver={e => {
+                                e.currentTarget.style.background = 'rgba(255,255,255,0.25)';
+                                e.currentTarget.style.transform = 'translateY(-3px)';
+                            }}
+                            onMouseOut={e => {
+                                e.currentTarget.style.background = 'rgba(255,255,255,0.15)';
+                                e.currentTarget.style.transform = 'translateY(0)';
+                            }}
+                            >
                                 <FaFacebook />
                             </a>
-                            <a href="#" target="_blank" rel="noopener noreferrer" className="footer-social-link">
+                            <a href="#" target="_blank" rel="noopener noreferrer" style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: '50%',
+                                background: 'rgba(255,255,255,0.15)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#fff',
+                                textDecoration: 'none',
+                                transition: '0.3s',
+                                fontSize: 18
+                            }}
+                            onMouseOver={e => {
+                                e.currentTarget.style.background = 'rgba(255,255,255,0.25)';
+                                e.currentTarget.style.transform = 'translateY(-3px)';
+                            }}
+                            onMouseOut={e => {
+                                e.currentTarget.style.background = 'rgba(255,255,255,0.15)';
+                                e.currentTarget.style.transform = 'translateY(0)';
+                            }}
+                            >
                                 <FaInstagram />
                             </a>
-                            <a href="https://www.tiktok.com/@chen.official" target="_blank" rel="noopener noreferrer" className="footer-social-link">
+                            <a href="https://www.tiktok.com/@chen.official" target="_blank" rel="noopener noreferrer" style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: '50%',
+                                background: 'rgba(255,255,255,0.15)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#fff',
+                                textDecoration: 'none',
+                                transition: '0.3s',
+                                fontSize: 18
+                            }}
+                            onMouseOver={e => {
+                                e.currentTarget.style.background = 'rgba(255,255,255,0.25)';
+                                e.currentTarget.style.transform = 'translateY(-3px)';
+                            }}
+                            onMouseOut={e => {
+                                e.currentTarget.style.background = 'rgba(255,255,255,0.15)';
+                                e.currentTarget.style.transform = 'translateY(0)';
+                            }}
+                            >
                                 <FaTiktok />
                             </a>
                         </div>
                     </div>
 
                     {/* Quick Links */}
-                    <div className="footer-column">
-                        <h4>Quick Links</h4>
-                        <div className="footer-links">
-                            <a href="/" className="footer-link">Home</a>
-                            <a href="https://www.facebook.com/LeiradOfficial/" target="_blank" rel="noopener noreferrer" className="footer-link">Facebook</a>
-                            <a href="https://www.tiktok.com/@chen.official" target="_blank" rel="noopener noreferrer" className="footer-link">TikTok</a>
+                    <div>
+                        <h4 style={{
+                            fontSize: 14,
+                            fontWeight: 600,
+                            margin: '0 0 15px 0',
+                            textTransform: 'uppercase',
+                            letterSpacing: 1.5
+                        }}>Quick Links</h4>
+                        <div style={{display: 'flex', flexDirection: 'column', gap: 10}}>
+                            <a href="/" style={{
+                                textDecoration: 'none',
+                                fontSize: 14,
+                                transition: '0.2s',
+                                padding: '4px 0'
+                            }}
+                            onMouseOver={e => {
+                                e.currentTarget.style.color = '#fff';
+                                e.currentTarget.style.paddingLeft = '8px';
+                            }}
+                            onMouseOut={e => {
+                                e.currentTarget.style.paddingLeft = '0';
+                            }}
+                            >Home</a>
+                            <a href="https://www.facebook.com/LeiradOfficial/" target="_blank" rel="noopener noreferrer" style={{
+                                textDecoration: 'none',
+                                fontSize: 14,
+                                transition: '0.2s',
+                                padding: '4px 0'
+                            }}
+                            onMouseOver={e => {
+                                e.currentTarget.style.color = '#fff';
+                                e.currentTarget.style.paddingLeft = '8px';
+                            }}
+                            onMouseOut={e => {
+                                e.currentTarget.style.paddingLeft = '0';
+                            }}
+                            >Facebook</a>
+                            <a href="https://www.tiktok.com/@chen.official" target="_blank" rel="noopener noreferrer" style={{
+                                textDecoration: 'none',
+                                fontSize: 14,
+                                transition: '0.2s',
+                                padding: '4px 0'
+                            }}
+                            onMouseOver={e => {
+                                e.currentTarget.style.color = '#fff';
+                                e.currentTarget.style.paddingLeft = '8px';
+                            }}
+                            onMouseOut={e => {
+                                e.currentTarget.style.paddingLeft = '0';
+                            }}
+                            >TikTok</a>
                         </div>
                     </div>
 
                     {/* Latest Releases */}
-                    <div className="footer-column">
-                        <h4>Latest Releases</h4>
-                        <div className="footer-releases">
+                    <div>
+                        <h4 style={{
+                            fontSize: 14,
+                            fontWeight: 600,
+                            margin: '0 0 15px 0',
+                            textTransform: 'uppercase',
+                            letterSpacing: 1.5
+                        }}>Latest Releases</h4>
+                        <div style={{display: 'flex', flexDirection: 'column', gap: 12}}>
                             {releases && releases.slice(0, 3).map(r => (
-                                <a key={r.id} href={`/?s=${r.shortcode}`} className="footer-release-item">
-                                    <img src={r.full_cover_url} alt={r.title} />
-                                    <div className="footer-release-info">
-                                        <p>{r.title}</p>
-                                        <span>{r.artist}</span>
+                                <a key={r.id} href={`/?s=${r.shortcode}`} style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 12,
+                                    textDecoration: 'none',
+                                    color: 'inherit',
+                                    transition: '0.2s',
+                                    padding: '6px',
+                                    borderRadius: 6
+                                }}
+                                onMouseOver={e => {
+                                    e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                                }}
+                                onMouseOut={e => {
+                                    e.currentTarget.style.background = 'transparent';
+                                }}
+                                >
+                                    <img src={r.full_cover_url} alt={r.title} style={{
+                                        width: 45,
+                                        height: 45,
+                                        borderRadius: 4,
+                                        objectFit: 'cover',
+                                        border: '1px solid rgba(255,255,255,0.15)'
+                                    }} />
+                                    <div>
+                                        <p style={{
+                                            margin: 0,
+                                            fontSize: 14,
+                                            fontWeight: 500,
+                                            color: 'rgba(255,255,255,0.95)'
+                                        }}>{r.title}</p>
+                                        <p style={{
+                                            margin: '3px 0 0 0',
+                                            fontSize: 12,
+                                            color: 'rgba(255,255,255,0.65)'
+                                        }}>{r.artist}</p>
                                     </div>
                                 </a>
                             ))}
@@ -195,41 +464,103 @@ export default function Home() {
                     </div>
 
                     {/* Newsletter */}
-                    <div className="footer-column footer-newsletter">
-                        <h4>Stay Updated</h4>
-                        <p>Subscribe to get the latest news and releases.</p>
-                        <form onSubmit={handleSubscribe} className="subscription-form">
-                            <input 
-                                type="email" 
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder="Enter your email"
-                                required
-                                className="subscription-input"
-                            />
-                            
-                            <div style={{ display: 'flex', justifyContent: 'center' }}>
-                                <Turnstile 
-                                    siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY} 
-                                    onSuccess={(token) => setTurnstileToken(token)}
-                                    options={{ theme: 'dark' }}
+                    <div>
+                        <h4 style={{
+                            fontSize: 14,
+                            fontWeight: 600,
+                            margin: '0 0 15px 0',
+                            textTransform: 'uppercase',
+                            letterSpacing: 1.5
+                        }}>Stay Updated</h4>
+                        <p style={{
+                            fontSize: 14,
+                            lineHeight: 1.6,
+                            margin: '0 0 15px 0'
+                        }}>Subscribe to get the latest news and releases.</p>
+                        <form onSubmit={handleSubscribe}>
+                            <div style={{display: 'flex', flexDirection: 'column', gap: 10}}>
+                                <input 
+                                    type="email" 
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="Enter your email"
+                                    required
+                                    style={{
+                                        width: '100%',
+                                        padding: '12px 14px',
+                                        borderRadius: 8,
+                                        fontSize: 14,
+                                        outline: 'none',
+                                        boxSizing: 'border-box',
+                                        transition: '0.2s'
+                                    }}
+                                    onFocus={(e) => {
+                                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)';
+                                        e.currentTarget.style.background = 'rgba(255,255,255,0.12)';
+                                    }}
+                                    onBlur={(e) => {
+                                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.25)';
+                                        e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                                    }}
                                 />
+                                
+                                {/* Cloudflare Turnstile */}
+                                <div style={{ 
+                                    display: 'flex', 
+                                    justifyContent: 'center',
+                                    margin: '5px 0'
+                                }}>
+                                    <Turnstile 
+                                        siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY} 
+                                        onSuccess={(token) => setTurnstileToken(token)}
+                                        options={{ theme: 'dark' }}
+                                    />
+                                </div>
+                                
+                                <button 
+                                    type="submit"
+                                    style={{
+                                        width: '100%',
+                                        padding: '12px',
+                                        borderRadius: 8,
+                                        border: 'none',
+                                        background: subscribed ? 'rgba(16, 185, 129, 0.8)' : 'rgba(255,255,255,0.2)',
+                                        fontSize: 14,
+                                        cursor: 'pointer',
+                                        transition: '0.3s',
+                                        letterSpacing: 0.5
+                                    }}
+                                    onMouseOver={(e) => {
+                                        if (!subscribed) {
+                                            e.currentTarget.style.background = 'rgba(255,255,255,0.3)';
+                                        }
+                                    }}
+                                    onMouseOut={(e) => {
+                                        if (!subscribed) {
+                                            e.currentTarget.style.background = 'rgba(255,255,255,0.2)';
+                                        }
+                                    }}
+                                >
+                                    {subscribed ? '✓ Subscribed!' : 'Subscribe'}
+                                </button>
                             </div>
-                            
-                            <button 
-                                type="submit"
-                                className={`subscription-button ${subscribed ? 'success' : ''}`}
-                                disabled={subscribed}
-                            >
-                                {subscribed ? '✓ Subscribed!' : 'Subscribe'}
-                            </button>
                         </form>
                     </div>
                 </div>
 
                 {/* Copyright */}
-                <div className="footer-copyright">
-                    <p>&copy; {new Date().getFullYear()} {home.artist_name}. All rights reserved.</p>
+                <div style={{
+                    borderTop: '1px solid rgba(255,255,255,0.15)',
+                    paddingTop: 25,
+                    textAlign: 'center'
+                }}>
+                    <p style={{
+                        fontSize: 13,
+                        color: 'rgba(255,255,255,0.5)',
+                        margin: 0
+                    }}>
+                        &copy; {new Date().getFullYear()} {home.artist_name}. All rights reserved.
+                    </p>
                 </div>
             </footer>
         </div>
