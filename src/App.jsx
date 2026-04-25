@@ -42,6 +42,10 @@ function App() {
             .then(data => {
                 if (data.success) {
                     setRelease(data.data);
+                    // Automatically show popup modal when a release is visited
+                    setTimeout(() => {
+                        setIsModalOpen(true);
+                    }, 1500); // 1.5s delay for better UX
                 } else {
                     setError(data.error || 'Release not found.');
                 }
@@ -192,40 +196,6 @@ function App() {
                             </a>
                         );
                     })}
-                </div>
-
-                {/* Subscription CTA Button */}
-                <div style={{ textAlign: 'center', marginTop: '40px', paddingBottom: '40px' }}>
-                    <button 
-                        onClick={() => setIsModalOpen(true)}
-                        style={{
-                            background: 'rgba(255,255,255,0.05)',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            borderRadius: '16px',
-                            padding: '24px 32px',
-                            cursor: 'pointer',
-                            color: '#fff',
-                            backdropFilter: 'blur(10px)',
-                            transition: 'all 0.3s ease',
-                            width: '100%',
-                            maxWidth: '480px',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            gap: '8px'
-                        }}
-                        onMouseOver={(e) => {
-                            e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
-                            e.currentTarget.style.transform = 'translateY(-2px)';
-                        }}
-                        onMouseOut={(e) => {
-                            e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
-                            e.currentTarget.style.transform = 'translateY(0)';
-                        }}
-                    >
-                        <span style={{ fontSize: '20px', fontWeight: '700', color: '#fff' }}>Stay Updated</span>
-                        <span style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)' }}>Subscribe to get the latest news and releases</span>
-                    </button>
                 </div>
             </div>
 
