@@ -28,6 +28,7 @@ function App() {
     const [email, setEmail] = useState('');
     const [subscribed, setSubscribed] = useState(false);
     const [turnstileToken, setTurnstileToken] = useState('');
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const queryParams = new URLSearchParams(window.location.search);
     const shortcode = queryParams.get('s');
@@ -86,6 +87,7 @@ function App() {
                     });
                     setSubscribed(true);
                     setEmail('');
+                    setIsModalOpen(false);
                     setTimeout(() => setSubscribed(false), 5000);
                 } else {
                     toast.error(data.error || 'Subscription failed. Please try again.', {
@@ -192,107 +194,180 @@ function App() {
                     })}
                 </div>
 
-                {/* Subscription Form Section */}
-                <div style={{
-                    marginTop: '48px',
-                    padding: '32px',
-                    background: 'rgba(255,255,255,0.05)',
-                    borderRadius: '16px',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    backdropFilter: 'blur(10px)'
-                }}>
-                    <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-                        <h3 style={{
-                            fontSize: '22px',
-                            fontWeight: '700',
-                            margin: '0 0 8px 0',
-                            color: '#fff'
-                        }}>Stay Updated</h3>
-                        <p style={{
-                            fontSize: '14px',
-                            color: 'rgba(255,255,255,0.7)',
-                            margin: '0 0 0 0',
-                            lineHeight: '1.6'
-                        }}>Subscribe to get the latest news and releases directly to your inbox.</p>
-                    </div>
-                    
-                    <form onSubmit={handleSubscribe} style={{ maxWidth: '480px', margin: '0 auto' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            <input 
-                                type="email" 
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder="Enter your email address"
-                                required
-                                style={{
-                                    width: '100%',
-                                    padding: '14px 18px',
-                                    borderRadius: '10px',
-                                    fontSize: '15px',
-                                    outline: 'none',
-                                    boxSizing: 'border-box',
-                                    border: '1px solid rgba(255,255,255,0.2)',
-                                    background: 'rgba(255,255,255,0.08)',
-                                    color: '#fff',
-                                    transition: '0.2s'
-                                }}
-                                onFocus={(e) => {
-                                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.4)';
-                                    e.currentTarget.style.background = 'rgba(255,255,255,0.12)';
-                                }}
-                                onBlur={(e) => {
-                                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)';
-                                    e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
-                                }}
-                            />
-                            
-                            {/* Cloudflare Turnstile */}
-                            <div style={{ 
-                                display: 'flex', 
-                                justifyContent: 'center',
-                                margin: '8px 0'
-                            }}>
-                                <Turnstile 
-                                    siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY} 
-                                    onSuccess={(token) => setTurnstileToken(token)}
-                                    options={{ theme: 'dark' }}
-                                />
-                            </div>
-                            
-                            <button 
-                                type="submit"
-                                style={{
-                                    width: '100%',
-                                    padding: '14px',
-                                    borderRadius: '10px',
-                                    border: 'none',
-                                    background: subscribed ? 'rgba(16, 185, 129, 0.8)' : 'rgba(255,255,255,0.15)',
-                                    color: '#fff',
-                                    fontSize: '15px',
-                                    fontWeight: '600',
-                                    cursor: 'pointer',
-                                    transition: '0.3s',
-                                    letterSpacing: '0.5px'
-                                }}
-                                onMouseOver={(e) => {
-                                    if (!subscribed) {
-                                        e.currentTarget.style.background = 'rgba(255,255,255,0.25)';
-                                        e.currentTarget.style.transform = 'translateY(-2px)';
-                                    }
-                                }}
-                                onMouseOut={(e) => {
-                                    if (!subscribed) {
-                                        e.currentTarget.style.background = 'rgba(255,255,255,0.15)';
-                                        e.currentTarget.style.transform = 'translateY(0)';
-                                    }
-                                }}
-                            >
-                                {subscribed ? '✓ Subscribed!' : 'Subscribe'}
-                            </button>
-                        </div>
-                    </form>
+                {/* Subscription CTA Button */}
+                <div style={{ textAlign: 'center', marginTop: '40px', paddingBottom: '40px' }}>
+                    <button 
+                        onClick={() => setIsModalOpen(true)}
+                        style={{
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '16px',
+                            padding: '24px 32px',
+                            cursor: 'pointer',
+                            color: '#fff',
+                            backdropFilter: 'blur(10px)',
+                            transition: 'all 0.3s ease',
+                            width: '100%',
+                            maxWidth: '480px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '8px'
+                        }}
+                        onMouseOver={(e) => {
+                            e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                        }}
+                        onMouseOut={(e) => {
+                            e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                        }}
+                    >
+                        <span style={{ fontSize: '20px', fontWeight: '700', color: '#fff' }}>Stay Updated</span>
+                        <span style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)' }}>Subscribe to get the latest news and releases</span>
+                    </button>
                 </div>
             </div>
+
+            {/* Subscribe Modal */}
+            {isModalOpen && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: 'rgba(0,0,0,0.7)',
+                    backdropFilter: 'blur(8px)',
+                    zIndex: 9999,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '20px'
+                }}>
+                    <div style={{
+                        background: '#18181b',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: '24px',
+                        padding: '40px',
+                        width: '100%',
+                        maxWidth: '440px',
+                        position: 'relative',
+                        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+                        animation: 'fadeInUp 0.3s ease'
+                    }}>
+                        {/* Close Button */}
+                        <button 
+                            onClick={() => setIsModalOpen(false)}
+                            style={{
+                                position: 'absolute',
+                                top: '20px',
+                                right: '20px',
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'rgba(255,255,255,0.5)',
+                                fontSize: '24px',
+                                cursor: 'pointer',
+                                transition: '0.2s'
+                            }}
+                            onMouseOver={(e) => e.currentTarget.style.color = '#fff'}
+                            onMouseOut={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.5)'}
+                        >
+                            &times;
+                        </button>
+
+                        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+                            <h3 style={{
+                                fontSize: '24px',
+                                fontWeight: '700',
+                                margin: '0 0 12px 0',
+                                color: '#fff',
+                                letterSpacing: '-0.02em'
+                            }}>Stay Updated</h3>
+                            <p style={{
+                                fontSize: '15px',
+                                color: 'rgba(255,255,255,0.6)',
+                                margin: 0,
+                                lineHeight: '1.5'
+                            }}>Subscribe to get the latest news and releases directly to your inbox.</p>
+                        </div>
+                        
+                        <form onSubmit={handleSubscribe}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                <input 
+                                    type="email" 
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="Enter your email address"
+                                    required
+                                    style={{
+                                        width: '100%',
+                                        padding: '16px 20px',
+                                        borderRadius: '12px',
+                                        fontSize: '15px',
+                                        outline: 'none',
+                                        boxSizing: 'border-box',
+                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        background: 'rgba(255,255,255,0.03)',
+                                        color: '#fff',
+                                        transition: 'all 0.2s ease'
+                                    }}
+                                    onFocus={(e) => {
+                                        e.currentTarget.style.borderColor = '#10b981';
+                                        e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
+                                    }}
+                                    onBlur={(e) => {
+                                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
+                                        e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+                                    }}
+                                />
+                                
+                                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                                    <Turnstile 
+                                        siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY} 
+                                        onSuccess={(token) => setTurnstileToken(token)}
+                                        options={{ theme: 'dark' }}
+                                    />
+                                </div>
+                                
+                                <button 
+                                    type="submit"
+                                    style={{
+                                        width: '100%',
+                                        padding: '16px',
+                                        borderRadius: '12px',
+                                        border: 'none',
+                                        background: subscribed ? '#059669' : '#10b981',
+                                        color: '#fff',
+                                        fontSize: '16px',
+                                        fontWeight: '600',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                        marginTop: '8px'
+                                    }}
+                                    onMouseOver={(e) => {
+                                        if (!subscribed) {
+                                            e.currentTarget.style.background = '#059669';
+                                            e.currentTarget.style.transform = 'translateY(-1px)';
+                                        }
+                                    }}
+                                    onMouseOut={(e) => {
+                                        if (!subscribed) {
+                                            e.currentTarget.style.background = '#10b981';
+                                            e.currentTarget.style.transform = 'translateY(0)';
+                                        }
+                                    }}
+                                >
+                                    {subscribed ? '✓ Subscribed!' : 'Subscribe Now'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+            <style dangerouslySetInnerHTML={{__html: `
+                @keyframes fadeInUp {
+                    from { opacity: 0; transform: translateY(20px) scale(0.95); }
+                    to { opacity: 1; transform: translateY(0) scale(1); }
+                }
+            `}} />
         </>
     );
 }
