@@ -1164,7 +1164,7 @@ function ReleasesView({ token, onLogout }) {
                                         </td>
                                         <td style={{ padding: '20px 24px', color: '#a1a1aa', fontFamily: 'monospace' }}>/{r.shortcode}</td>
                                         <td style={{ padding: '20px 24px', color: '#10b981', fontWeight: 500 }}>
-                                            {r.stream_count ? r.stream_count.toLocaleString() : 0}
+                                            {r.stream_count ? r.stream_count : '-'}
                                         </td>
                                         <td style={{ padding: '20px 24px', textAlign: 'right' }}>
                                             <div style={{ display: 'inline-flex', gap: 10 }}>
@@ -1213,7 +1213,7 @@ function EditReleaseForm({ token, releaseId, onSuccess, onLogout }) {
     const [artist, setArtist] = useState('');
     const [coverFile, setCoverFile] = useState(null);
     const [spotifyEmbed, setSpotifyEmbed] = useState('');
-    const [streamCount, setStreamCount] = useState(0);
+    const [streamCount, setStreamCount] = useState('');
     const [links, setLinks] = useState([{ platform_name: '', platform_url: '' }]);
 
     useEffect(() => {
@@ -1223,7 +1223,7 @@ function EditReleaseForm({ token, releaseId, onSuccess, onLogout }) {
                     setTitle(data.data.title);
                     setArtist(data.data.artist);
                     setSpotifyEmbed(data.data.spotify_embed || '');
-                    setStreamCount(data.data.stream_count || 0);
+                    setStreamCount(data.data.stream_count || '');
                     if (data.data.links && data.data.links.length > 0) setLinks(data.data.links);
                 } else if (data.error === 'Unauthorized') onLogout();
             });
@@ -1232,18 +1232,13 @@ function EditReleaseForm({ token, releaseId, onSuccess, onLogout }) {
             setArtist('');
             setCoverFile(null);
             setSpotifyEmbed('');
-            setStreamCount(0);
+            setStreamCount('');
             setLinks([{ platform_name: '', platform_url: '' }]);
         }
     }, [releaseId, isNew, token, onLogout]);
 
     const handleSave = async (e) => {
         e.preventDefault();
-        
-        if (streamCount < 0) {
-            toast.error("Stream count cannot be negative");
-            return;
-        }
 
         const loadingToast = toast.loading('Saving release...');
         const formData = new FormData();
@@ -1285,7 +1280,7 @@ function EditReleaseForm({ token, releaseId, onSuccess, onLogout }) {
             </div>
             <div style={{marginBottom:20}}>
                 <label style={{display:'block', marginBottom:8, fontWeight:500, fontSize:14, color:'#a1a1aa'}}>Stream Count</label>
-                <input type="number" value={streamCount} onChange={e=>setStreamCount(parseInt(e.target.value) || 0)} style={{width:'100%', padding:'12px 16px', borderRadius:10, border:'1px solid #27272a', boxSizing:'border-box', outline:'none', color:'#fff', background:'#09090b'}} onFocus={e=>e.currentTarget.style.borderColor='#10b981'} onBlur={e=>e.currentTarget.style.borderColor='#27272a'}/>
+                <input type="text" value={streamCount} onChange={e=>setStreamCount(e.target.value)} placeholder="e.g. 1000+" style={{width:'100%', padding:'12px 16px', borderRadius:10, border:'1px solid #27272a', boxSizing:'border-box', outline:'none', color:'#fff', background:'#09090b'}} onFocus={e=>e.currentTarget.style.borderColor='#10b981'} onBlur={e=>e.currentTarget.style.borderColor='#27272a'}/>
             </div>
             <div style={{marginBottom:25}}>
                 <label style={{display:'block', marginBottom:8, fontWeight:500, fontSize:14, color:'#a1a1aa'}}>Cover Image {isNew ? '' : '(Upload to replace)'}</label>
