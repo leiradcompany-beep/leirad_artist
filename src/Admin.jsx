@@ -1125,9 +1125,10 @@ function ReleasesView({ token, onLogout }) {
                         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead>
                                 <tr style={{ borderBottom: '1px solid #27272a', background: 'rgba(255,255,255,0.02)' }}>
-                                    <th style={{ width: '40%', textAlign: 'left', padding: '16px 24px', color: '#a1a1aa', fontWeight: 600, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Release</th>
-                                    <th style={{ width: '30%', textAlign: 'left', padding: '16px 24px', color: '#a1a1aa', fontWeight: 600, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Artist</th>
-                                    <th style={{ width: '30%', textAlign: 'right', padding: '16px 24px', color: '#a1a1aa', fontWeight: 600, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Actions</th>
+                                    <th style={{ width: '35%', textAlign: 'left', padding: '16px 24px', color: '#a1a1aa', fontWeight: 600, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Release</th>
+                                    <th style={{ width: '25%', textAlign: 'left', padding: '16px 24px', color: '#a1a1aa', fontWeight: 600, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Shortcode</th>
+                                    <th style={{ width: '15%', textAlign: 'left', padding: '16px 24px', color: '#a1a1aa', fontWeight: 600, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Streams</th>
+                                    <th style={{ width: '25%', textAlign: 'right', padding: '16px 24px', color: '#a1a1aa', fontWeight: 600, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1157,11 +1158,14 @@ function ReleasesView({ token, onLogout }) {
                                                 </div>
                                                 <div>
                                                     <div style={{ fontWeight: 600, color: '#fff', fontSize: 15, marginBottom: 4 }}>{r.title}</div>
-                                                    <div style={{ fontSize: 12, color: '#71717a', fontFamily: 'monospace' }}>/{r.shortcode}</div>
+                                                    <div style={{ fontSize: 12, color: '#a1a1aa' }}>{r.artist}</div>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td style={{ padding: '20px 24px', color: '#a1a1aa', fontWeight: 500 }}>{r.artist}</td>
+                                        <td style={{ padding: '20px 24px', color: '#a1a1aa', fontFamily: 'monospace' }}>/{r.shortcode}</td>
+                                        <td style={{ padding: '20px 24px', color: '#10b981', fontWeight: 500 }}>
+                                            {r.stream_count ? r.stream_count.toLocaleString() : 0}
+                                        </td>
                                         <td style={{ padding: '20px 24px', textAlign: 'right' }}>
                                             <div style={{ display: 'inline-flex', gap: 10 }}>
                                                 <a href={`/?s=${r.shortcode}`} target="_blank" rel="noreferrer" style={{ width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#27272a', color: '#fff', borderRadius: 10, transition: '0.2s' }} title="View Release" onMouseOver={e=>{e.currentTarget.style.background='#3f3f46'}} onMouseOut={e=>{e.currentTarget.style.background='#27272a'}}>
@@ -1209,6 +1213,7 @@ function EditReleaseForm({ token, releaseId, onSuccess, onLogout }) {
     const [artist, setArtist] = useState('');
     const [coverFile, setCoverFile] = useState(null);
     const [spotifyEmbed, setSpotifyEmbed] = useState('');
+    const [streamCount, setStreamCount] = useState(0);
     const [links, setLinks] = useState([{ platform_name: '', platform_url: '' }]);
 
     useEffect(() => {
@@ -1218,6 +1223,7 @@ function EditReleaseForm({ token, releaseId, onSuccess, onLogout }) {
                     setTitle(data.data.title);
                     setArtist(data.data.artist);
                     setSpotifyEmbed(data.data.spotify_embed || '');
+                    setStreamCount(data.data.stream_count || 0);
                     if (data.data.links && data.data.links.length > 0) setLinks(data.data.links);
                 } else if (data.error === 'Unauthorized') onLogout();
             });
@@ -1226,18 +1232,26 @@ function EditReleaseForm({ token, releaseId, onSuccess, onLogout }) {
             setArtist('');
             setCoverFile(null);
             setSpotifyEmbed('');
+            setStreamCount(0);
             setLinks([{ platform_name: '', platform_url: '' }]);
         }
     }, [releaseId, isNew, token, onLogout]);
 
     const handleSave = async (e) => {
         e.preventDefault();
+        
+        if (streamCount < 0) {
+            toast.error("Stream count cannot be negative");
+            return;
+        }
+
         const loadingToast = toast.loading('Saving release...');
         const formData = new FormData();
         if (releaseId) formData.append('id', releaseId);
         formData.append('title', title);
         formData.append('artist', artist);
         formData.append('spotify_embed', spotifyEmbed);
+        formData.append('stream_count', streamCount);
         if (coverFile) formData.append('cover_image', coverFile);
         formData.append('links', JSON.stringify(links));
 
@@ -1268,6 +1282,10 @@ function EditReleaseForm({ token, releaseId, onSuccess, onLogout }) {
             <div style={{marginBottom:20}}>
                 <label style={{display:'block', marginBottom:8, fontWeight:500, fontSize:14, color:'#a1a1aa'}}>Artist</label>
                 <input type="text" value={artist} onChange={e=>setArtist(e.target.value)} required style={{width:'100%', padding:'12px 16px', borderRadius:10, border:'1px solid #27272a', boxSizing:'border-box', outline:'none', color:'#fff', background:'#09090b'}} onFocus={e=>e.currentTarget.style.borderColor='#10b981'} onBlur={e=>e.currentTarget.style.borderColor='#27272a'}/>
+            </div>
+            <div style={{marginBottom:20}}>
+                <label style={{display:'block', marginBottom:8, fontWeight:500, fontSize:14, color:'#a1a1aa'}}>Stream Count</label>
+                <input type="number" value={streamCount} onChange={e=>setStreamCount(parseInt(e.target.value) || 0)} style={{width:'100%', padding:'12px 16px', borderRadius:10, border:'1px solid #27272a', boxSizing:'border-box', outline:'none', color:'#fff', background:'#09090b'}} onFocus={e=>e.currentTarget.style.borderColor='#10b981'} onBlur={e=>e.currentTarget.style.borderColor='#27272a'}/>
             </div>
             <div style={{marginBottom:25}}>
                 <label style={{display:'block', marginBottom:8, fontWeight:500, fontSize:14, color:'#a1a1aa'}}>Cover Image {isNew ? '' : '(Upload to replace)'}</label>
