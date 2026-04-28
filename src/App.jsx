@@ -201,7 +201,30 @@ function App() {
                         const isDownload = link.platform_name.toLowerCase().includes('itunes') || 
                                            link.platform_name.toLowerCase().includes('download');
                         return (
-                            <a key={idx} href={link.platform_url} className="link-item" target="_blank" rel="noopener noreferrer">
+                            <a 
+                                key={idx} 
+                                href={link.platform_url} 
+                                className="link-item" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                onClick={(e) => {
+                                    // Track click before navigating away
+                                    const trackData = JSON.stringify({
+                                        release_id: release.id,
+                                        platform_name: link.platform_name
+                                    });
+                                    if (navigator.sendBeacon) {
+                                        navigator.sendBeacon(`${API_BASE_URL}/track_click.php`, new Blob([trackData], { type: 'application/json' }));
+                                    } else {
+                                        fetch(`${API_BASE_URL}/track_click.php`, {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: trackData,
+                                            keepalive: true
+                                        }).catch(() => {});
+                                    }
+                                }}
+                            >
                                 <div className="platform-info">
                                     <span style={{ color: pInfo.color, fontSize: '20px', marginRight: '12px', display: 'flex', alignItems: 'center' }}>
                                         {pInfo.icon}
