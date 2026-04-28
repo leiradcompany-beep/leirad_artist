@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import Preloader from './Preloader.jsx';
-import { FaFacebook, FaTiktok, FaInstagram } from 'react-icons/fa';
+import { FaFacebook, FaTiktok, FaInstagram, FaSpotify } from 'react-icons/fa';
 import toast, { Toaster } from 'react-hot-toast';
 import { Turnstile } from '@marsidev/react-turnstile';
 
@@ -148,7 +148,7 @@ export default function Home() {
                                 <p>{r.artist}</p>
                                 {r.stream_count && (
                                     <p style={{ fontSize: 12, color: '#10b981', marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg>
+                                        <FaSpotify size={12} />
                                         {r.stream_count} Streams
                                     </p>
                                 )}
@@ -181,7 +181,7 @@ export default function Home() {
                                 <p>{r.artist}</p>
                                 {r.stream_count && (
                                     <p style={{ fontSize: 12, color: '#10b981', marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg>
+                                        <FaSpotify size={12} />
                                         {r.stream_count} Streams
                                     </p>
                                 )}
@@ -478,7 +478,7 @@ export default function Home() {
                                                 alignItems: 'center',
                                                 gap: 3
                                             }}>
-                                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"></path><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path></svg>
+                                                <FaSpotify size={10} />
                                                 {r.stream_count} Streams
                                             </p>
                                         )}
