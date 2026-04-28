@@ -208,20 +208,50 @@ function App() {
                                 target="_blank" 
                                 rel="noopener noreferrer"
                                 onClick={(e) => {
-                                    // Track click before navigating away
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    
                                     const trackData = JSON.stringify({
                                         release_id: release.id,
                                         platform_name: link.platform_name
                                     });
-                                    if (navigator.sendBeacon) {
-                                        navigator.sendBeacon(`${API_BASE_URL}/track_click.php`, new Blob([trackData], { type: 'application/json' }));
-                                    } else {
-                                        fetch(`${API_BASE_URL}/track_click.php`, {
-                                            method: 'POST',
-                                            headers: { 'Content-Type': 'application/json' },
-                                            body: trackData,
-                                            keepalive: true
-                                        }).catch(() => {});
+                                    
+                                    const openLink = () => {
+                                        window.open(link.platform_url, '_blank', 'noopener,noreferrer');
+                                    };
+                                    
+                                    let tracked = false;
+                                    const doOpen = () => {
+                                        if (!tracked) {
+                                            tracked = true;
+                                            openLink();
+                                        }
+                                    };
+                                    
+                                    // Always open the link after a short timeout as fallback
+                                    const fallbackTimer = setTimeout(doOpen, 350);
+                                    
+                                    try {
+                                        if (navigator.sendBeacon) {
+                                            navigator.sendBeacon(`${API_BASE_URL}/track_click.php`, new Blob([trackData], { type: 'application/json' }));
+                                            clearTimeout(fallbackTimer);
+                                            doOpen();
+                                        } else {
+                                            fetch(`${API_BASE_URL}/track_click.php`, {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: trackData,
+                                                keepalive: true
+                                            })
+                                            .catch(() => {})
+                                            .finally(() => {
+                                                clearTimeout(fallbackTimer);
+                                                doOpen();
+                                            });
+                                        }
+                                    } catch (err) {
+                                        clearTimeout(fallbackTimer);
+                                        doOpen();
                                     }
                                 }}
                             >
