@@ -4,7 +4,8 @@ import { Turnstile } from '@marsidev/react-turnstile';
 import toast, { Toaster } from 'react-hot-toast';
 import { 
     LayoutDashboard, LogOut, Plus, Edit2, Trash2, Share2, 
-    Home as HomeIcon, KeyRound, X, ExternalLink, Menu, Users, Mail
+    Home as HomeIcon, KeyRound, X, ExternalLink, Menu, Users, Mail,
+    MousePointerClick
 } from 'lucide-react';
 import Preloader from './Preloader.jsx';
 import { 
@@ -848,9 +849,15 @@ function DashboardView({ token, onLogout }) {
     const handleExport = () => {
         if (!analytics) return;
         const csvRows = [];
-        csvRows.push(['Date', 'Visitors', 'Streams']);
+        csvRows.push(['Date', 'Clicks']);
         analytics.activity.forEach(row => {
-            csvRows.push([row.date, row.visitors, row.streams]);
+            csvRows.push([row.date, row.clicks]);
+        });
+        // Add platform summary
+        csvRows.push([]);
+        csvRows.push(['Platform', 'Clicks']);
+        analytics.sources.forEach(row => {
+            csvRows.push([row.name, row.value]);
         });
         const csvContent = csvRows.map(e => e.join(",")).join("\n");
         const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -866,7 +873,7 @@ function DashboardView({ token, onLogout }) {
     if (isLoading) return <Preloader />;
     if (!analytics) return <div style={{ padding: 40, textAlign: 'center', color: '#fff' }}>Failed to load analytics</div>;
 
-    const { total_releases, total_subscribers, activity, sources } = analytics;
+    const { total_releases, total_subscribers, total_clicks, activity, sources } = analytics;
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24, paddingBottom: 40 }}>
@@ -926,12 +933,12 @@ function DashboardView({ token, onLogout }) {
                 <div style={{ background: '#18181b', padding: 24, borderRadius: 16, border: '1px solid #27272a', boxShadow: '0 4px 20px rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', gap: 12 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <div style={{ background: 'rgba(245, 158, 11, 0.1)', padding: 10, borderRadius: 10, color: '#f59e0b' }}>
-                            <LayoutDashboard size={24} />
+                            <MousePointerClick size={24} />
                         </div>
-                        <span style={{ fontWeight: 600, color: '#a1a1aa', fontSize: 15 }}>Total Streams (30d)</span>
+                        <span style={{ fontWeight: 600, color: '#a1a1aa', fontSize: 15 }}>Total Clicks</span>
                     </div>
                     <div style={{ fontSize: 36, fontWeight: 700, color: '#fff' }}>
-                        {activity.reduce((acc, curr) => acc + curr.streams, 0).toLocaleString()}
+                        {(total_clicks || 0).toLocaleString()}
                     </div>
                 </div>
                 <div style={{ background: '#18181b', padding: 24, borderRadius: 16, border: '1px solid #27272a', boxShadow: '0 4px 20px rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -939,10 +946,10 @@ function DashboardView({ token, onLogout }) {
                         <div style={{ background: 'rgba(147, 51, 234, 0.1)', padding: 10, borderRadius: 10, color: '#9333ea' }}>
                             <Share2 size={24} />
                         </div>
-                        <span style={{ fontWeight: 600, color: '#a1a1aa', fontSize: 15 }}>Total Visitors (30d)</span>
+                        <span style={{ fontWeight: 600, color: '#a1a1aa', fontSize: 15 }}>Active Platforms</span>
                     </div>
                     <div style={{ fontSize: 36, fontWeight: 700, color: '#fff' }}>
-                        {activity.reduce((acc, curr) => acc + curr.visitors, 0).toLocaleString()}
+                        {sources.length}
                     </div>
                 </div>
             </div>
@@ -951,7 +958,7 @@ function DashboardView({ token, onLogout }) {
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24 }}>
                 {/* Line Chart */}
                 <div style={{ background: '#18181b', padding: 24, borderRadius: 16, border: '1px solid #27272a', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
-                    <h3 style={{ margin: '0 0 20px 0', fontSize: 18, fontWeight: 600, color: '#fff' }}>Audience Activity</h3>
+                    <h3 style={{ margin: '0 0 20px 0', fontSize: 18, fontWeight: 600, color: '#fff' }}>Link Clicks (Last 30 Days)</h3>
                     <div style={{ width: '100%', height: 350 }}>
                         <ResponsiveContainer>
                             <LineChart data={activity} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
@@ -963,8 +970,7 @@ function DashboardView({ token, onLogout }) {
                                     itemStyle={{ fontWeight: 600 }}
                                 />
                                 <Legend iconType="circle" wrapperStyle={{ paddingTop: 20 }} />
-                                <Line type="monotone" dataKey="streams" name="Streams" stroke="#10b981" strokeWidth={3} dot={false} activeDot={{ r: 6, strokeWidth: 0 }} />
-                                <Line type="monotone" dataKey="visitors" name="Visitors" stroke="#3b82f6" strokeWidth={3} dot={false} activeDot={{ r: 6, strokeWidth: 0 }} />
+                                <Line type="monotone" dataKey="clicks" name="Clicks" stroke="#10b981" strokeWidth={3} dot={false} activeDot={{ r: 6, strokeWidth: 0 }} />
                             </LineChart>
                         </ResponsiveContainer>
                     </div>
@@ -972,7 +978,7 @@ function DashboardView({ token, onLogout }) {
 
                 {/* Pie Chart */}
                 <div style={{ background: '#18181b', padding: 24, borderRadius: 16, border: '1px solid #27272a', boxShadow: '0 4px 20px rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column' }}>
-                    <h3 style={{ margin: '0 0 20px 0', fontSize: 18, fontWeight: 600, color: '#fff' }}>Traffic Sources</h3>
+                    <h3 style={{ margin: '0 0 20px 0', fontSize: 18, fontWeight: 600, color: '#fff' }}>Clicks by Platform</h3>
                     <div style={{ width: '100%', flex: 1, minHeight: 300 }}>
                         <ResponsiveContainer>
                             <PieChart>
@@ -1000,7 +1006,7 @@ function DashboardView({ token, onLogout }) {
 
             {/* Bar Chart Row */}
             <div style={{ background: '#18181b', padding: 24, borderRadius: 16, border: '1px solid #27272a', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
-                <h3 style={{ margin: '0 0 20px 0', fontSize: 18, fontWeight: 600, color: '#fff' }}>Platform Engagement</h3>
+                <h3 style={{ margin: '0 0 20px 0', fontSize: 18, fontWeight: 600, color: '#fff' }}>Platform Clicks</h3>
                 <div style={{ width: '100%', height: 350 }}>
                     <ResponsiveContainer>
                         <BarChart data={sources} margin={{ top: 20, right: 30, left: 20, bottom: 5 }} barSize={40}>
@@ -1011,7 +1017,7 @@ function DashboardView({ token, onLogout }) {
                                 cursor={{ fill: 'rgba(255,255,255,0.05)' }}
                                 contentStyle={{ background: '#18181b', borderRadius: 12, border: '1px solid #27272a', boxShadow: '0 10px 25px rgba(0,0,0,0.3)', color: '#fff' }}
                             />
-                            <Bar dataKey="value" name="Engagement Score" radius={[6, 6, 0, 0]}>
+                            <Bar dataKey="value" name="Clicks" radius={[6, 6, 0, 0]}>
                                 {sources.map((entry, index) => (
                                     <Cell key={`cell-${index}`} fill={entry.fill} />
                                 ))}
@@ -1125,10 +1131,11 @@ function ReleasesView({ token, onLogout }) {
                         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead>
                                 <tr style={{ borderBottom: '1px solid #27272a', background: 'rgba(255,255,255,0.02)' }}>
-                                    <th style={{ width: '35%', textAlign: 'left', padding: '16px 24px', color: '#a1a1aa', fontWeight: 600, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Release</th>
-                                    <th style={{ width: '25%', textAlign: 'left', padding: '16px 24px', color: '#a1a1aa', fontWeight: 600, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Shortcode</th>
+                                    <th style={{ width: '30%', textAlign: 'left', padding: '16px 24px', color: '#a1a1aa', fontWeight: 600, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Release</th>
+                                    <th style={{ width: '20%', textAlign: 'left', padding: '16px 24px', color: '#a1a1aa', fontWeight: 600, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Shortcode</th>
+                                    <th style={{ width: '15%', textAlign: 'left', padding: '16px 24px', color: '#a1a1aa', fontWeight: 600, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Clicks</th>
                                     <th style={{ width: '15%', textAlign: 'left', padding: '16px 24px', color: '#a1a1aa', fontWeight: 600, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Streams</th>
-                                    <th style={{ width: '25%', textAlign: 'right', padding: '16px 24px', color: '#a1a1aa', fontWeight: 600, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Actions</th>
+                                    <th style={{ width: '20%', textAlign: 'right', padding: '16px 24px', color: '#a1a1aa', fontWeight: 600, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1163,6 +1170,9 @@ function ReleasesView({ token, onLogout }) {
                                             </div>
                                         </td>
                                         <td style={{ padding: '20px 24px', color: '#a1a1aa', fontFamily: 'monospace' }}>/{r.shortcode}</td>
+                                        <td style={{ padding: '20px 24px', color: '#f59e0b', fontWeight: 500 }}>
+                                            {r.total_clicks ? r.total_clicks.toLocaleString() : '0'}
+                                        </td>
                                         <td style={{ padding: '20px 24px', color: '#10b981', fontWeight: 500 }}>
                                             {r.stream_count ? r.stream_count : '-'}
                                         </td>
