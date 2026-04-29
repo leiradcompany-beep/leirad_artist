@@ -340,7 +340,7 @@ export default function Home() {
                             >
                                 <FaInstagram />
                             </a>
-                            <a href="https://www.tiktok.com/@chen.official" target="_blank" rel="noopener noreferrer" style={{
+                            <a href="https://www.tiktok.com/@leirad.g.official" target="_blank" rel="noopener noreferrer" style={{
                                 width: 40,
                                 height: 40,
                                 borderRadius: '50%',
