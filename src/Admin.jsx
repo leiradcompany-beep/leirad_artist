@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Routes, Route, useNavigate, useLocation, Link } from 'react-router-dom';
 import { Turnstile } from '@marsidev/react-turnstile';
 import toast, { Toaster } from 'react-hot-toast';
@@ -12,6 +12,7 @@ import {
     LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, 
     XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from 'recharts';
+import { useRealtimeData } from './hooks/useRealtimeData.js';
 
 import { API_BASE_URL } from './config.js';
 
@@ -537,6 +538,13 @@ function Drawer({ isOpen, onClose, title, children }) {
                     {children}
                 </div>
             </div>
+            
+            <style>{`
+                @keyframes pulse {
+                    0%, 100% { opacity: 1; }
+                    50% { opacity: 0.5; }
+                }
+            `}</style>
         </>
     );
 }
@@ -835,16 +843,22 @@ function Modal({ isOpen, onClose, title, message, onConfirm, confirmText='Confir
 // --- Views ---
 
 function DashboardView({ token, onLogout }) {
-    const [analytics, setAnalytics] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        fetchApi('analytics', token).then(data => {
-            if (data.success) setAnalytics(data.data);
-            else if (data.error === 'Unauthorized') onLogout();
-            setIsLoading(false);
-        }).catch(() => setIsLoading(false));
+    const fetchAnalytics = useCallback(async () => {
+        const data = await fetchApi('analytics', token);
+        if (data.success) {
+            return data.data;
+        } else if (data.error === 'Unauthorized') {
+            onLogout();
+            return null;
+        }
+        return null;
     }, [token, onLogout]);
+
+    const { data: analytics, isLoading, lastUpdateTime, formatLastUpdate } = useRealtimeData(
+        fetchAnalytics,
+        5000,
+        [token, onLogout]
+    );
 
     const handleExport = () => {
         if (!analytics) return;
@@ -853,7 +867,6 @@ function DashboardView({ token, onLogout }) {
         analytics.activity.forEach(row => {
             csvRows.push([row.date, row.clicks]);
         });
-        // Add platform summary
         csvRows.push([]);
         csvRows.push(['Platform', 'Clicks']);
         analytics.sources.forEach(row => {
@@ -880,7 +893,31 @@ function DashboardView({ token, onLogout }) {
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                    <h1 style={{ margin: '0 0 5px 0', fontSize: 28, fontWeight: 700, color: '#fff' }}>Overview</h1>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 5 }}>
+                        <h1 style={{ margin: 0, fontSize: 28, fontWeight: 700, color: '#fff' }}>Overview</h1>
+                        {lastUpdateTime && (
+                            <div style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: 6, 
+                                padding: '4px 10px', 
+                                background: 'rgba(16, 185, 129, 0.1)', 
+                                borderRadius: 20, 
+                                border: '1px solid rgba(16, 185, 129, 0.2)' 
+                            }}>
+                                <div style={{ 
+                                    width: 8, 
+                                    height: 8, 
+                                    borderRadius: '50%', 
+                                    background: '#10b981',
+                                    animation: 'pulse 2s infinite'
+                                }}></div>
+                                <span style={{ fontSize: 12, color: '#10b981', fontWeight: 500 }}>
+                                    Live • {formatLastUpdate(lastUpdateTime)}
+                                </span>
+                            </div>
+                        )}
+                    </div>
                     <p style={{ margin: 0, color: '#a1a1aa', fontSize: 15 }}>Welcome back! Here's what's happening with your music.</p>
                 </div>
                 <div style={{ display: 'flex', gap: 12 }}>
@@ -1062,6 +1099,11 @@ function DashboardView({ token, onLogout }) {
                     <p style={{ margin: '8px 0 0 0', color: '#a1a1aa', fontSize: 13 }}>
                         Total clicks tracked: <span style={{ color: '#fff', fontWeight: 600 }}>{(total_clicks || 0).toLocaleString()}</span>
                     </p>
+                    {lastUpdateTime && (
+                        <p style={{ margin: '4px 0 0 0', color: '#71717a', fontSize: 12 }}>
+                            Last updated: {formatLastUpdate(lastUpdateTime)}
+                        </p>
+                    )}
                 </div>
                 <div style={{ 
                     display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
