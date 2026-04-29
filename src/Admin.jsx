@@ -1026,6 +1026,65 @@ function DashboardView({ token, onLogout }) {
                     </ResponsiveContainer>
                 </div>
             </div>
+
+            {/* Detailed Click Analytics */}
+            <div style={{ background: '#18181b', padding: 24, borderRadius: 16, border: '1px solid #27272a', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                    <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: '#fff' }}>Recent Click Activity</h3>
+                    <button 
+                        onClick={() => {
+                            fetchApi('click_details', token).then(data => {
+                                if (data.success) {
+                                    console.log('Detailed click data:', data.data);
+                                    toast.success('Click data loaded to console');
+                                } else if (data.error === 'Unauthorized') {
+                                    onLogout();
+                                }
+                            }).catch(() => toast.error('Failed to load click details'));
+                        }}
+                        style={{ 
+                            padding: '8px 16px', background: '#27272a', color: '#fff', border: 'none', 
+                            borderRadius: 8, cursor: 'pointer', fontWeight: 500, fontSize: 14, transition: '0.2s' 
+                        }}
+                        onMouseOver={e => e.currentTarget.style.background = '#3f3f46'}
+                        onMouseOut={e => e.currentTarget.style.background = '#27272a'}
+                    >
+                        Load Detailed Data
+                    </button>
+                </div>
+                <div style={{ 
+                    padding: '16px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: 8, 
+                    border: '1px solid rgba(16, 185, 129, 0.2)', marginBottom: 16 
+                }}>
+                    <p style={{ margin: 0, color: '#10b981', fontSize: 14, fontWeight: 500 }}>
+                        ✓ Click tracking is active and monitoring all user clicks on music service links
+                    </p>
+                    <p style={{ margin: '8px 0 0 0', color: '#a1a1aa', fontSize: 13 }}>
+                        Total clicks tracked: <span style={{ color: '#fff', fontWeight: 600 }}>{(total_clicks || 0).toLocaleString()}</span>
+                    </p>
+                </div>
+                <div style={{ 
+                    display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+                    gap: 16, marginBottom: 16 
+                }}>
+                    {sources.slice(0, 4).map((source, index) => (
+                        <div key={index} style={{ 
+                            padding: '16px', background: '#27272a', borderRadius: 12, 
+                            border: '1px solid #3f3f46' 
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                                <div style={{ 
+                                    width: 12, height: 12, borderRadius: '50%', background: source.fill 
+                                }}></div>
+                                <span style={{ color: '#a1a1aa', fontSize: 13 }}>{source.name}</span>
+                            </div>
+                            <div style={{ fontSize: 24, fontWeight: 700, color: '#fff' }}>
+                                {source.value.toLocaleString()}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
         </div>
     );
 }
