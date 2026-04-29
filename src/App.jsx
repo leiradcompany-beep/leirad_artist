@@ -242,6 +242,7 @@ function App() {
                                                     `${API_BASE_URL}/track_click.php`, 
                                                     new Blob([trackData], { type: 'application/json' })
                                                 );
+                                                console.log('sendBeacon result:', trackingSuccess);
                                             } catch (beaconError) {
                                                 console.warn('sendBeacon failed:', beaconError);
                                                 trackingSuccess = false;
@@ -263,15 +264,20 @@ function App() {
                                                 const response = await fetch(`${API_BASE_URL}/track_click.php`, {
                                                     method: 'POST',
                                                     headers: { 'Content-Type': 'application/json' },
-                                                    body: trackData,
-                                                    keepalive: true
+                                                    body: trackData
                                                 });
                                                 
+                                                console.log('Fetch response status:', response.status);
+                                                
                                                 if (response.ok) {
+                                                    const data = await response.json();
+                                                    console.log('Click tracking response:', data);
                                                     clearTimeout(fallbackTimer);
                                                     tracked = true;
                                                     openLink();
                                                 } else {
+                                                    const errorData = await response.json().catch(() => ({}));
+                                                    console.error('Tracking failed:', response.status, errorData);
                                                     throw new Error(`Tracking failed with status: ${response.status}`);
                                                 }
                                             } catch (fetchError) {
