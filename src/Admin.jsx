@@ -5,13 +5,13 @@ import toast, { Toaster } from 'react-hot-toast';
 import { 
     LayoutDashboard, LogOut, Plus, Edit2, Trash2, Share2, 
     Home as HomeIcon, KeyRound, X, ExternalLink, Menu, Users, Mail,
-    MousePointerClick
+    MousePointerClick, RefreshCw
 } from 'lucide-react';
 import Preloader from './Preloader.jsx';
 import { 
     LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, 
     XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
-} from 'recharts';
+       } from 'recharts';
 import { useRealtimeData } from './hooks/useRealtimeData.js';
 
 import { API_BASE_URL } from './config.js';
@@ -943,6 +943,28 @@ function DashboardView({ token, onLogout }) {
                         onMouseOut={e => e.currentTarget.style.background = '#fff'}
                     >
                         <LayoutDashboard size={16} /> Export Report
+                    </button>
+                    <button 
+                        onClick={() => {
+                            fetchAnalytics();
+                            toast.success('Data refreshed');
+                        }}
+                        style={{ 
+                            display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', 
+                            background: '#18181b', color: '#fff', border: '1px solid #27272a', borderRadius: 8, 
+                            cursor: 'pointer', fontWeight: 600, fontSize: 14, transition: '0.2s'
+                        }}
+                        onMouseOver={e => {
+                            e.currentTarget.style.background = '#27272a';
+                            e.currentTarget.style.borderColor = '#3f3f46';
+                        }}
+                        onMouseOut={e => {
+                            e.currentTarget.style.background = '#18181b';
+                            e.currentTarget.style.borderColor = '#27272a';
+                        }}
+                        title="Refresh Data"
+                    >
+                        <RefreshCw size={16} /> Refresh
                     </button>
                 </div>
             </div>
