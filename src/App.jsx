@@ -2,10 +2,15 @@ import { useEffect, useState } from 'react';
 import Home from './Home.jsx';
 import Preloader from './Preloader.jsx';
 import './index.css';
-import { FaSpotify, FaApple, FaYoutube, FaDeezer, FaSoundcloud, FaAmazon, FaMusic, FaFacebook, FaInstagram, FaTiktok } from 'react-icons/fa';
+import { 
+    FaSpotify, FaApple, FaYoutube, FaDeezer, FaSoundcloud, 
+    FaAmazon, FaMusic, FaTimes, FaEnvelope 
+} from 'react-icons/fa';
 import { SiTidal } from 'react-icons/si';
 import toast, { Toaster } from 'react-hot-toast';
 import { Turnstile } from '@marsidev/react-turnstile';
+
+import { API_BASE_URL } from './config.js';
 
 function getPlatformInfo(name) {
     const nameLower = name.toLowerCase();
@@ -19,8 +24,6 @@ function getPlatformInfo(name) {
     return { color: '#ffffff', icon: <FaMusic /> };
 }
 
-import { API_BASE_URL } from './config.js';
-
 function App() {
     const [release, setRelease] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -29,6 +32,7 @@ function App() {
     const [subscribed, setSubscribed] = useState(false);
     const [turnstileToken, setTurnstileToken] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const queryParams = new URLSearchParams(window.location.search);
     const shortcode = queryParams.get('s');
@@ -38,12 +42,8 @@ function App() {
 
         // Dynamically fetch from the configured environment API URL
         fetch(`${API_BASE_URL}/get_release.php?s=${shortcode}`)
-            .then(res => {
-                console.log('API Response Status:', res.status);
-                return res.json();
-            })
+            .then(res => res.json())
             .then(data => {
-                console.log('API Response Data:', data);
                 if (data.success) {
                     setRelease(data.data);
                     // Automatically show popup modal when a release is visited
@@ -51,13 +51,11 @@ function App() {
                         setIsModalOpen(true);
                     }, 1500); // 1.5s delay for better UX
                 } else {
-                    console.error('API Error:', data.error);
                     setError(data.error || 'Release not found.');
                 }
                 setLoading(false);
             })
             .catch(err => {
-                console.error('Fetch Error:', err);
                 setError('Failed to load release from API.');
                 setLoading(false);
             });
@@ -71,6 +69,7 @@ function App() {
                 return;
             }
 
+            setIsSubmitting(true);
             const loadingToast = toast.loading('Subscribing...');
             
             try {
@@ -97,8 +96,12 @@ function App() {
                     });
                     setSubscribed(true);
                     setEmail('');
-                    setIsModalOpen(false);
-                    setTimeout(() => setSubscribed(false), 5000);
+                    
+                    // Delay modal close slightly for better UX
+                    setTimeout(() => {
+                        setIsModalOpen(false);
+                        setSubscribed(false);
+                    }, 2000);
                 } else {
                     toast.error(data.error || 'Subscription failed. Please try again.', {
                         id: loadingToast
@@ -109,6 +112,8 @@ function App() {
                 toast.error('Failed to subscribe. Please try again later.', {
                     id: loadingToast
                 });
+            } finally {
+                setIsSubmitting(false);
             }
         }
     };
@@ -124,28 +129,6 @@ function App() {
             <div className="container not-found">
                 <h1>Release Not Found</h1>
                 <p>{error}</p>
-                <p style={{ marginTop: '20px', fontSize: '14px', color: '#a1a1aa' }}>
-                    Shortcode: {shortcode}
-                </p>
-                <p style={{ fontSize: '14px', color: '#a1a1aa' }}>
-                    API URL: {API_BASE_URL}/get_release.php?s={shortcode}
-                </p>
-                <button 
-                    onClick={() => window.location.href = '/'}
-                    style={{
-                        marginTop: '20px',
-                        padding: '12px 24px',
-                        background: '#10b981',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        fontWeight: '500'
-                    }}
-                >
-                    Go to Home
-                </button>
             </div>
         );
     }
@@ -164,26 +147,12 @@ function App() {
                         padding: '16px 20px',
                         boxShadow: '0 10px 25px rgba(0,0,0,0.3)'
                     },
-                    success: {
-                        iconTheme: {
-                            primary: '#10b981',
-                            secondary: '#fff'
-                        }
-                    },
-                    error: {
-                        iconTheme: {
-                            primary: '#ef4444',
-                            secondary: '#fff'
-                        }
-                    },
-                    loading: {
-                        iconTheme: {
-                            primary: '#3b82f6',
-                            secondary: '#fff'
-                        }
-                    }
+                    success: { iconTheme: { primary: '#10b981', secondary: '#fff' } },
+                    error: { iconTheme: { primary: '#ef4444', secondary: '#fff' } },
+                    loading: { iconTheme: { primary: '#3b82f6', secondary: '#fff' } }
                 }}
             />
+            
             <div 
                 className="bg-blur" 
                 style={{ backgroundImage: `url('${release.full_cover_url}')` }}
@@ -263,14 +232,12 @@ function App() {
                                     
                                     try {
                                         let trackingSuccess = false;
-                                        
                                         if (navigator.sendBeacon) {
                                             try {
                                                 trackingSuccess = navigator.sendBeacon(
                                                     `${API_BASE_URL}/track_click.php`, 
                                                     new Blob([trackData], { type: 'application/json' })
                                                 );
-                                                console.log('sendBeacon result:', trackingSuccess);
                                             } catch (beaconError) {
                                                 console.warn('sendBeacon failed:', beaconError);
                                                 trackingSuccess = false;
@@ -295,28 +262,20 @@ function App() {
                                                     body: trackData
                                                 });
                                                 
-                                                console.log('Fetch response status:', response.status);
-                                                
                                                 if (response.ok) {
-                                                    const data = await response.json();
-                                                    console.log('Click tracking response:', data);
                                                     clearTimeout(fallbackTimer);
                                                     tracked = true;
                                                     openLink();
                                                 } else {
-                                                    const errorData = await response.json().catch(() => ({}));
-                                                    console.error('Tracking failed:', response.status, errorData);
                                                     throw new Error(`Tracking failed with status: ${response.status}`);
                                                 }
                                             } catch (fetchError) {
-                                                console.warn('Fetch tracking failed:', fetchError);
                                                 clearTimeout(fallbackTimer);
                                                 trackingFailed = true;
                                                 doOpen();
                                             }
                                         }
                                     } catch (error) {
-                                        console.error('Click tracking error:', error);
                                         trackingFailed = true;
                                         doOpen();
                                     }
@@ -333,337 +292,251 @@ function App() {
                         );
                     })}
                 </div>
-
-                {/* Social Media Links Section */}
-                <div className="release-info" style={{ textAlign: 'center', marginTop: '40px', marginBottom: '20px' }}>
-                    <p className="subtitle" style={{ marginBottom: '20px' }}>Follow on Social Media</p>
-                    <div style={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        gap: '16px',
-                        flexWrap: 'wrap'
-                    }}>
-                        <a 
-                            href="https://www.facebook.com/LeiradOfficial/" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                padding: '12px 20px',
-                                borderRadius: '12px',
-                                background: 'rgba(255,255,255,0.08)',
-                                border: '1px solid rgba(255,255,255,0.15)',
-                                color: '#fff',
-                                textDecoration: 'none',
-                                fontSize: '14px',
-                                fontWeight: '500',
-                                transition: 'all 0.2s ease',
-                                minWidth: '140px',
-                                justifyContent: 'center'
-                            }}
-                            onMouseOver={(e) => {
-                                e.currentTarget.style.background = 'rgba(255,255,255,0.15)';
-                                e.currentTarget.style.transform = 'translateY(-2px)';
-                                e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.2)';
-                            }}
-                            onMouseOut={(e) => {
-                                e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
-                                e.currentTarget.style.transform = 'translateY(0)';
-                                e.currentTarget.style.boxShadow = 'none';
-                            }}
-                        >
-                            <FaFacebook size={18} />
-                            Facebook
-                        </a>
-                        <a 
-                            href="https://www.tiktok.com/@leirad.g.official" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                padding: '12px 20px',
-                                borderRadius: '12px',
-                                background: 'rgba(255,255,255,0.08)',
-                                border: '1px solid rgba(255,255,255,0.15)',
-                                color: '#fff',
-                                textDecoration: 'none',
-                                fontSize: '14px',
-                                fontWeight: '500',
-                                transition: 'all 0.2s ease',
-                                minWidth: '140px',
-                                justifyContent: 'center'
-                            }}
-                            onMouseOver={(e) => {
-                                e.currentTarget.style.background = 'rgba(255,255,255,0.15)';
-                                e.currentTarget.style.transform = 'translateY(-2px)';
-                                e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.2)';
-                            }}
-                            onMouseOut={(e) => {
-                                e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
-                                e.currentTarget.style.transform = 'translateY(0)';
-                                e.currentTarget.style.boxShadow = 'none';
-                            }}
-                        >
-                            <FaTiktok size={18} />
-                            TikTok
-                        </a>
-                    </div>
-                </div>
             </div>
 
             {/* Subscribe Modal */}
             {isModalOpen && (
                 <div 
-                    onClick={() => setIsModalOpen(false)}
-                    style={{
-                        position: 'fixed',
-                        top: 0, left: 0, right: 0, bottom: 0,
-                        backgroundColor: 'rgba(0,0,0,0.85)',
-                        backdropFilter: 'blur(12px)',
-                        WebkitBackdropFilter: 'blur(12px)',
-                        zIndex: 9999,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: '16px',
-                        animation: 'modalFadeIn 0.3s ease-out'
-                    }}
+                    className="modal-overlay"
+                    onClick={() => setIsModalOpen(false)} // Click outside to close
                 >
                     <div 
-                        onClick={(e) => e.stopPropagation()}
-                        style={{
-                            background: 'linear-gradient(145deg, #1a1a1e 0%, #0f0f12 100%)',
-                            border: '1px solid rgba(255,255,255,0.08)',
-                            borderRadius: '24px',
-                            padding: 'clamp(24px, 5vw, 48px)',
-                            width: '100%',
-                            maxWidth: '480px',
-                            maxHeight: '90vh',
-                            overflowY: 'auto',
-                            position: 'relative',
-                            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.05)',
-                            animation: 'modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
-                        }}
+                        className="modal-container"
+                        onClick={(e) => e.stopPropagation()} // Prevent close when clicking inside
                     >
-                        {/* Decorative Background Element */}
-                        <div style={{
-                            position: 'absolute',
-                            top: '-50%',
-                            right: '-50%',
-                            width: '200%',
-                            height: '200%',
-                            background: 'radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 70%)',
-                            pointerEvents: 'none',
-                            zIndex: 0
-                        }} />
-
-                        {/* Close Button */}
                         <button 
+                            className="modal-close-btn"
                             onClick={() => setIsModalOpen(false)}
-                            style={{
-                                position: 'absolute',
-                                top: '16px',
-                                right: '16px',
-                                width: '36px',
-                                height: '36px',
-                                borderRadius: '50%',
-                                background: 'rgba(255,255,255,0.05)',
-                                border: '1px solid rgba(255,255,255,0.1)',
-                                color: 'rgba(255,255,255,0.6)',
-                                fontSize: '20px',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                zIndex: 1
-                            }}
-                            onMouseOver={(e) => {
-                                e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-                                e.currentTarget.style.color = '#fff';
-                                e.currentTarget.style.transform = 'rotate(90deg)';
-                            }}
-                            onMouseOut={(e) => {
-                                e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
-                                e.currentTarget.style.color = 'rgba(255,255,255,0.6)';
-                                e.currentTarget.style.transform = 'rotate(0deg)';
-                            }}
+                            aria-label="Close modal"
                         >
-                            ×
+                            <FaTimes />
                         </button>
 
-                        {/* Modal Content */}
-                        <div style={{ position: 'relative', zIndex: 1 }}>
-                            {/* Icon/Logo Section */}
-                            <div style={{
-                                width: '64px',
-                                height: '64px',
-                                borderRadius: '16px',
-                                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                margin: '0 auto 24px',
-                                boxShadow: '0 12px 24px rgba(16,185,129,0.3)',
-                                fontSize: '28px'
-                            }}>
-                                ✉️
+                        <div className="modal-header">
+                            <div className="modal-icon-wrapper">
+                                <FaEnvelope className="modal-icon" />
                             </div>
-
-                            {/* Header */}
-                            <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-                                <h3 style={{
-                                    fontSize: 'clamp(22px, 4vw, 28px)',
-                                    fontWeight: '700',
-                                    margin: '0 0 12px 0',
-                                    background: 'linear-gradient(135deg, #ffffff 0%, #a1a1aa 100%)',
-                                    WebkitBackgroundClip: 'text',
-                                    WebkitTextFillColor: 'transparent',
-                                    backgroundClip: 'text',
-                                    letterSpacing: '-0.02em',
-                                    lineHeight: '1.2'
-                                }}>Stay in the Loop</h3>
-                                <p style={{
-                                    fontSize: 'clamp(14px, 2.5vw, 15px)',
-                                    color: 'rgba(255,255,255,0.6)',
-                                    margin: 0,
-                                    lineHeight: '1.6',
-                                    maxWidth: '400px',
-                                    marginLeft: 'auto',
-                                    marginRight: 'auto'
-                                }}>Get exclusive updates, new releases, and behind-the-scenes content delivered straight to your inbox.</p>
+                            <h3>Stay Updated</h3>
+                            <p>Subscribe to get the latest news and exclusive releases directly to your inbox.</p>
+                        </div>
+                        
+                        <form onSubmit={handleSubscribe} className="modal-form">
+                            <div className="input-group">
+                                <input 
+                                    type="email" 
+                                    className="subscribe-input"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="Enter your email address"
+                                    required
+                                    disabled={isSubmitting || subscribed}
+                                />
                             </div>
                             
-                            {/* Form */}
-                            <form onSubmit={handleSubscribe}>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                                    {/* Email Input */}
-                                    <div style={{ position: 'relative' }}>
-                                        <input 
-                                            type="email" 
-                                            value={email}
-                                            onChange={(e) => setEmail(e.target.value)}
-                                            placeholder="your@email.com"
-                                            required
-                                            style={{
-                                                width: '100%',
-                                                padding: '16px 20px',
-                                                borderRadius: '14px',
-                                                fontSize: 'clamp(14px, 2.5vw, 15px)',
-                                                outline: 'none',
-                                                boxSizing: 'border-box',
-                                                border: '2px solid rgba(255,255,255,0.08)',
-                                                background: 'rgba(255,255,255,0.03)',
-                                                color: '#fff',
-                                                transition: 'all 0.3s ease',
-                                                fontFamily: 'inherit'
-                                            }}
-                                            onFocus={(e) => {
-                                                e.currentTarget.style.borderColor = '#10b981';
-                                                e.currentTarget.style.background = 'rgba(16,185,129,0.05)';
-                                                e.currentTarget.style.boxShadow = '0 0 0 4px rgba(16,185,129,0.1)';
-                                            }}
-                                            onBlur={(e) => {
-                                                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
-                                                e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
-                                                e.currentTarget.style.boxShadow = 'none';
-                                            }}
-                                        />
-                                    </div>
-                                    
-                                    {/* Turnstile */}
-                                    <div style={{ 
-                                        display: 'flex', 
-                                        justifyContent: 'center',
-                                        transform: 'scale(0.9)',
-                                        transformOrigin: 'center'
-                                    }}>
-                                        <Turnstile 
-                                            siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY} 
-                                            onSuccess={(token) => setTurnstileToken(token)}
-                                            options={{ theme: 'dark' }}
-                                        />
-                                    </div>
-                                    
-                                    {/* Submit Button */}
-                                    <button 
-                                        type="submit"
-                                        style={{
-                                            width: '100%',
-                                            padding: '16px 24px',
-                                            borderRadius: '14px',
-                                            border: 'none',
-                                            background: subscribed 
-                                                ? 'linear-gradient(135deg, #059669 0%, #10b981 100%)'
-                                                : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                                            color: '#fff',
-                                            fontSize: 'clamp(15px, 2.5vw, 16px)',
-                                            fontWeight: '600',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                                            boxShadow: subscribed 
-                                                ? '0 8px 16px rgba(5,150,105,0.3)'
-                                                : '0 8px 16px rgba(16,185,129,0.4)',
-                                            letterSpacing: '0.01em',
-                                            position: 'relative',
-                                            overflow: 'hidden'
-                                        }}
-                                        onMouseOver={(e) => {
-                                            if (!subscribed) {
-                                                e.currentTarget.style.transform = 'translateY(-2px)';
-                                                e.currentTarget.style.boxShadow = '0 12px 24px rgba(16,185,129,0.5)';
-                                            }
-                                        }}
-                                        onMouseOut={(e) => {
-                                            if (!subscribed) {
-                                                e.currentTarget.style.transform = 'translateY(0)';
-                                                e.currentTarget.style.boxShadow = '0 8px 16px rgba(16,185,129,0.4)';
-                                            }
-                                        }}
-                                    >
-                                        {subscribed ? (
-                                            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                                                <span style={{ fontSize: '18px' }}>✓</span>
-                                                <span>Subscribed!</span>
-                                            </span>
-                                        ) : (
-                                            'Subscribe Now'
-                                        )}
-                                    </button>
-
-                                    {/* Privacy Note */}
-                                    <p style={{
-                                        fontSize: '12px',
-                                        color: 'rgba(255,255,255,0.4)',
-                                        textAlign: 'center',
-                                        margin: '8px 0 0 0',
-                                        lineHeight: '1.5'
-                                    }}>
-                                        No spam, ever. Unsubscribe anytime.
-                                    </p>
-                                </div>
-                            </form>
-                        </div>
+                            <div className="turnstile-wrapper">
+                                <Turnstile 
+                                    siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY} 
+                                    onSuccess={(token) => setTurnstileToken(token)}
+                                    options={{ theme: 'dark' }}
+                                />
+                            </div>
+                            
+                            <button 
+                                type="submit"
+                                className={`subscribe-btn ${subscribed ? 'success' : ''}`}
+                                disabled={!email || isSubmitting || subscribed}
+                            >
+                                {isSubmitting ? 'Subscribing...' : (subscribed ? '✓ Subscribed!' : 'Subscribe Now')}
+                            </button>
+                        </form>
                     </div>
                 </div>
             )}
+
             <style dangerouslySetInnerHTML={{__html: `
-                @keyframes modalFadeIn {
+                /* Modal Overlay */
+                .modal-overlay {
+                    position: fixed;
+                    inset: 0;
+                    background-color: rgba(0, 0, 0, 0.65);
+                    backdrop-filter: blur(10px);
+                    -webkit-backdrop-filter: blur(10px);
+                    z-index: 9999;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 20px;
+                    animation: overlayFadeIn 0.3s ease-out forwards;
+                }
+
+                /* Modal Container */
+                .modal-container {
+                    background: linear-gradient(145deg, #18181b 0%, #121214 100%);
+                    border: 1px solid rgba(255, 255, 255, 0.08);
+                    border-radius: 24px;
+                    padding: 40px 32px;
+                    width: 100%;
+                    max-width: 420px;
+                    position: relative;
+                    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+                    animation: modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                }
+
+                /* Close Button */
+                .modal-close-btn {
+                    position: absolute;
+                    top: 20px;
+                    right: 20px;
+                    background: rgba(255, 255, 255, 0.05);
+                    border: none;
+                    color: rgba(255, 255, 255, 0.5);
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                }
+                .modal-close-btn:hover {
+                    background: rgba(255, 255, 255, 0.1);
+                    color: #fff;
+                    transform: scale(1.05);
+                }
+
+                /* Modal Header & Text */
+                .modal-header {
+                    text-align: center;
+                    margin-bottom: 28px;
+                }
+                .modal-icon-wrapper {
+                    width: 56px;
+                    height: 56px;
+                    background: rgba(16, 185, 129, 0.1);
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin: 0 auto 20px auto;
+                    box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+                }
+                .modal-icon {
+                    color: #10b981;
+                    font-size: 22px;
+                }
+                .modal-header h3 {
+                    font-size: 24px;
+                    font-weight: 700;
+                    margin: 0 0 10px 0;
+                    color: #ffffff;
+                    letter-spacing: -0.02em;
+                }
+                .modal-header p {
+                    font-size: 15px;
+                    color: #a1a1aa;
+                    margin: 0;
+                    line-height: 1.5;
+                }
+
+                /* Form Elements */
+                .modal-form {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 20px;
+                }
+                .subscribe-input {
+                    width: 100%;
+                    padding: 16px 20px;
+                    border-radius: 12px;
+                    font-size: 15px;
+                    outline: none;
+                    box-sizing: border-box;
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    background: rgba(0, 0, 0, 0.2);
+                    color: #fff;
+                    transition: all 0.2s ease;
+                }
+                .subscribe-input::placeholder {
+                    color: #71717a;
+                }
+                .subscribe-input:focus {
+                    border-color: #10b981;
+                    background: rgba(0, 0, 0, 0.3);
+                    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+                }
+                .subscribe-input:disabled {
+                    opacity: 0.6;
+                    cursor: not-allowed;
+                }
+
+                .turnstile-wrapper {
+                    display: flex;
+                    justify-content: center;
+                    min-height: 65px;
+                    overflow: hidden;
+                }
+
+                /* Submit Button */
+                .subscribe-btn {
+                    width: 100%;
+                    padding: 16px;
+                    border-radius: 12px;
+                    border: none;
+                    background: #10b981;
+                    color: #fff;
+                    font-size: 16px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+                }
+                .subscribe-btn:not(:disabled):hover {
+                    background: #059669;
+                    transform: translateY(-2px);
+                    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
+                }
+                .subscribe-btn:not(:disabled):active {
+                    transform: translateY(0);
+                }
+                .subscribe-btn:disabled {
+                    background: #27272a;
+                    color: #71717a;
+                    box-shadow: none;
+                    cursor: not-allowed;
+                }
+                .subscribe-btn.success {
+                    background: #059669;
+                    color: #fff;
+                }
+
+                /* Animations */
+                @keyframes overlayFadeIn {
                     from { opacity: 0; }
                     to { opacity: 1; }
                 }
                 @keyframes modalSlideUp {
-                    from { 
-                        opacity: 0; 
-                        transform: translateY(30px) scale(0.95); 
+                    from { opacity: 0; transform: translateY(30px) scale(0.96); }
+                    to { opacity: 1; transform: translateY(0) scale(1); }
+                }
+
+                /* Mobile Responsiveness */
+                @media (max-width: 480px) {
+                    .modal-container {
+                        padding: 32px 24px;
                     }
-                    to { 
-                        opacity: 1; 
-                        transform: translateY(0) scale(1); 
+                    .modal-header h3 {
+                        font-size: 22px;
+                    }
+                    .modal-header p {
+                        font-size: 14px;
+                    }
+                    .turnstile-wrapper {
+                        transform: scale(0.9); /* Prevent Turnstile overflow on very small devices */
+                        transform-origin: center center;
                     }
                 }
             `}} />
