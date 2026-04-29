@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import Home from './Home.jsx';
 import Preloader from './Preloader.jsx';
 import './index.css';
-import { FaSpotify, FaApple, FaYoutube, FaDeezer, FaSoundcloud, FaAmazon, FaMusic } from 'react-icons/fa';
+import { FaSpotify, FaApple, FaYoutube, FaDeezer, FaSoundcloud, FaAmazon, FaMusic, FaFacebook, FaInstagram, FaTiktok } from 'react-icons/fa';
 import { SiTidal } from 'react-icons/si';
 import toast, { Toaster } from 'react-hot-toast';
 import { Turnstile } from '@marsidev/react-turnstile';
