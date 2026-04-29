@@ -4,7 +4,9 @@ import Preloader from './Preloader.jsx';
 import './index.css';
 import { 
     FaSpotify, FaApple, FaYoutube, FaDeezer, FaSoundcloud, 
-    FaAmazon, FaMusic, FaTimes, FaEnvelope 
+    FaAmazon, FaMusic, FaTimes, FaEnvelope,
+    /* Social Media Icons */
+    FaInstagram, FaTwitter, FaFacebookF, FaTiktok, FaGlobe
 } from 'react-icons/fa';
 import { SiTidal } from 'react-icons/si';
 import toast, { Toaster } from 'react-hot-toast';
@@ -12,6 +14,7 @@ import { Turnstile } from '@marsidev/react-turnstile';
 
 import { API_BASE_URL } from './config.js';
 
+// Music Platform Info
 function getPlatformInfo(name) {
     const nameLower = name.toLowerCase();
     if (nameLower.includes('spotify')) return { color: '#1DB954', icon: <FaSpotify /> };
@@ -22,6 +25,16 @@ function getPlatformInfo(name) {
     else if (nameLower.includes('amazon')) return { color: '#FF9900', icon: <FaAmazon /> };
     else if (nameLower.includes('tidal')) return { color: '#ffffff', icon: <SiTidal /> };
     return { color: '#ffffff', icon: <FaMusic /> };
+}
+
+// Social Media Platform Info
+function getSocialIcon(platform) {
+    const p = platform.toLowerCase();
+    if (p.includes('instagram')) return <FaInstagram />;
+    if (p.includes('twitter') || p.includes('x')) return <FaTwitter />;
+    if (p.includes('facebook')) return <FaFacebookF />;
+    if (p.includes('tiktok')) return <FaTiktok />;
+    return <FaGlobe />;
 }
 
 function App() {
@@ -37,19 +50,26 @@ function App() {
     const queryParams = new URLSearchParams(window.location.search);
     const shortcode = queryParams.get('s');
 
-    useEffect(() => {
-        if (!shortcode) return; // Router will just output Home.
+    // ▼ EDIT YOUR SOCIAL MEDIA LINKS HERE ▼
+    const socialAccounts = [
+        { platform: 'facebook', url: 'https://facebook.com/yourprofile' },
+        { platform: 'tiktok', url: 'https://tiktok.com/@yourprofile' },
+        { platform: 'instagram', url: 'https://instagram.com/yourprofile' },
+        { platform: 'twitter', url: 'https://twitter.com/yourprofile' }
+    ];
 
-        // Dynamically fetch from the configured environment API URL
+    useEffect(() => {
+        if (!shortcode) return; 
+
         fetch(`${API_BASE_URL}/get_release.php?s=${shortcode}`)
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
                     setRelease(data.data);
-                    // Automatically show popup modal when a release is visited
+                    // Automatically show popup modal
                     setTimeout(() => {
                         setIsModalOpen(true);
-                    }, 1500); // 1.5s delay for better UX
+                    }, 1500); 
                 } else {
                     setError(data.error || 'Release not found.');
                 }
@@ -73,14 +93,11 @@ function App() {
             const loadingToast = toast.loading('Subscribing...');
             
             try {
-                // Encode email to prevent casual viewing in Network tab
                 const encodedEmail = btoa(encodeURIComponent(email));
                 
                 const response = await fetch(`${API_BASE_URL}/subscribe.php`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                         email_encoded: encodedEmail,
                         turnstile_token: turnstileToken 
@@ -97,7 +114,6 @@ function App() {
                     setSubscribed(true);
                     setEmail('');
                     
-                    // Delay modal close slightly for better UX
                     setTimeout(() => {
                         setIsModalOpen(false);
                         setSubscribed(false);
@@ -120,9 +136,7 @@ function App() {
 
     if (!shortcode) return <Home />;
 
-    if (loading) {
-        return <Preloader />;
-    }
+    if (loading) return <Preloader />;
 
     if (error || !release) {
         return (
@@ -158,6 +172,7 @@ function App() {
                 style={{ backgroundImage: `url('${release.full_cover_url}')` }}
             ></div>
 
+            {/* Main Page Content containing release details & music links */}
             <div className="container">
                 {release.spotify_embed ? (
                     <div className="spotify-embed" style={{ marginBottom: '24px' }}>
@@ -172,28 +187,27 @@ function App() {
                         )}
                     </div>
                 ) : (
-                    <>
-                        <div className="release-info">
-                            <h1 className="artist-name">{release.artist}</h1>
-                            <h2 className="title">{release.title}</h2>
-                            {release.stream_count && (
-                                <div style={{ color: '#a1a1aa', fontSize: '14px', fontWeight: 500, marginTop: '8px' }}>
-                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
-                                        <FaSpotify size={16} />
-                                        {release.stream_count} Streams
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-                    </>
+                    <div className="release-info">
+                        <h1 className="artist-name">{release.artist}</h1>
+                        <h2 className="title">{release.title}</h2>
+                        {release.stream_count && (
+                            <div style={{ color: '#a1a1aa', fontSize: '14px', fontWeight: 500, marginTop: '8px' }}>
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
+                                    <FaSpotify size={16} />
+                                    {release.stream_count} Streams
+                                </span>
+                            </div>
+                        )}
+                    </div>
                 )}
 
                 <div className="release-info" style={{ textAlign: 'center', marginBottom: '24px' }}>
                     <p className="subtitle">Choose music service</p>
                 </div>
 
+                {/* Music Platforms Links */}
                 <div className="links-box">
-                    {release.links.map((link, idx) => {
+                    {release.links && release.links.map((link, idx) => {
                         const pInfo = getPlatformInfo(link.platform_name);
                         const isDownload = link.platform_name.toLowerCase().includes('itunes') || 
                                            link.platform_name.toLowerCase().includes('download');
@@ -213,10 +227,7 @@ function App() {
                                         platform_name: link.platform_name
                                     });
                                     
-                                    const openLink = () => {
-                                        window.open(link.platform_url, '_blank', 'noopener,noreferrer');
-                                    };
-                                    
+                                    const openLink = () => window.open(link.platform_url, '_blank', 'noopener,noreferrer');
                                     let tracked = false;
                                     let trackingFailed = false;
                                     
@@ -224,9 +235,6 @@ function App() {
                                         if (!tracked) {
                                             tracked = true;
                                             openLink();
-                                            if (trackingFailed) {
-                                                console.warn('Click tracking failed, but link was opened');
-                                            }
                                         }
                                     };
                                     
@@ -234,14 +242,8 @@ function App() {
                                         let trackingSuccess = false;
                                         if (navigator.sendBeacon) {
                                             try {
-                                                trackingSuccess = navigator.sendBeacon(
-                                                    `${API_BASE_URL}/track_click.php`, 
-                                                    new Blob([trackData], { type: 'application/json' })
-                                                );
-                                            } catch (beaconError) {
-                                                console.warn('sendBeacon failed:', beaconError);
-                                                trackingSuccess = false;
-                                            }
+                                                trackingSuccess = navigator.sendBeacon(`${API_BASE_URL}/track_click.php`, new Blob([trackData], { type: 'application/json' }));
+                                            } catch (beaconError) { trackingSuccess = false; }
                                         }
                                         
                                         if (trackingSuccess) {
@@ -249,10 +251,7 @@ function App() {
                                             openLink();
                                         } else {
                                             const fallbackTimer = setTimeout(() => {
-                                                if (!tracked) {
-                                                    trackingFailed = true;
-                                                    doOpen();
-                                                }
+                                                if (!tracked) { trackingFailed = true; doOpen(); }
                                             }, 500);
                                             
                                             try {
@@ -261,24 +260,18 @@ function App() {
                                                     headers: { 'Content-Type': 'application/json' },
                                                     body: trackData
                                                 });
-                                                
                                                 if (response.ok) {
                                                     clearTimeout(fallbackTimer);
                                                     tracked = true;
                                                     openLink();
-                                                } else {
-                                                    throw new Error(`Tracking failed with status: ${response.status}`);
-                                                }
+                                                } else { throw new Error(`Status: ${response.status}`); }
                                             } catch (fetchError) {
                                                 clearTimeout(fallbackTimer);
                                                 trackingFailed = true;
                                                 doOpen();
                                             }
                                         }
-                                    } catch (error) {
-                                        trackingFailed = true;
-                                        doOpen();
-                                    }
+                                    } catch (error) { doOpen(); }
                                 }}
                             >
                                 <div className="platform-info">
@@ -292,39 +285,56 @@ function App() {
                         );
                     })}
                 </div>
+
+                {/* --- Social Media Links Section --- */}
+                {/* Clicking these will safely open a new tab and redirect to your social profiles */}
+                <div className="social-links-container">
+                    {(release.social_links?.length > 0 ? release.social_links : socialAccounts).map((social, idx) => (
+                        <a 
+                            key={idx} 
+                            href={social.url} 
+                            className="social-icon-link" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            aria-label={`Visit our ${social.platform} page`}
+                        >
+                            {getSocialIcon(social.platform)}
+                        </a>
+                    ))}
+                </div>
             </div>
 
-            {/* Subscribe Modal */}
+            {/* Subscribe Modal - Using unique custom classes (sm-) to prevent CSS conflicts */}
             {isModalOpen && (
                 <div 
-                    className="modal-overlay"
-                    onClick={() => setIsModalOpen(false)} // Click outside to close
+                    className="sm-modal-overlay"
+                    onClick={() => setIsModalOpen(false)} 
                 >
                     <div 
-                        className="modal-container"
-                        onClick={(e) => e.stopPropagation()} // Prevent close when clicking inside
+                        className="sm-modal-container"
+                        onClick={(e) => e.stopPropagation()} 
                     >
                         <button 
-                            className="modal-close-btn"
+                            className="sm-modal-close-btn"
                             onClick={() => setIsModalOpen(false)}
                             aria-label="Close modal"
                         >
                             <FaTimes />
                         </button>
 
-                        <div className="modal-header">
-                            <div className="modal-icon-wrapper">
-                                <FaEnvelope className="modal-icon" />
+                        <div className="sm-modal-header">
+                            <div className="sm-modal-icon-wrapper">
+                                <FaEnvelope className="sm-modal-icon" />
                             </div>
-                            <h3>Stay Updated</h3>
-                            <p>Subscribe to get the latest news and exclusive releases directly to your inbox.</p>
+                            <h3 className="sm-modal-title">Stay Updated</h3>
+                            <p className="sm-modal-desc">Subscribe to get the latest news and exclusive releases directly to your inbox.</p>
                         </div>
                         
-                        <form onSubmit={handleSubscribe} className="modal-form">
-                            <div className="input-group">
+                        <form onSubmit={handleSubscribe} className="sm-modal-form">
+                            <div className="sm-input-group">
                                 <input 
                                     type="email" 
-                                    className="subscribe-input"
+                                    className="sm-subscribe-input"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     placeholder="Enter your email address"
@@ -333,7 +343,7 @@ function App() {
                                 />
                             </div>
                             
-                            <div className="turnstile-wrapper">
+                            <div className="sm-turnstile-wrapper">
                                 <Turnstile 
                                     siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY} 
                                     onSuccess={(token) => setTurnstileToken(token)}
@@ -343,7 +353,7 @@ function App() {
                             
                             <button 
                                 type="submit"
-                                className={`subscribe-btn ${subscribed ? 'success' : ''}`}
+                                className={`sm-subscribe-btn ${subscribed ? 'success' : ''}`}
                                 disabled={!email || isSubmitting || subscribed}
                             >
                                 {isSubmitting ? 'Subscribing...' : (subscribed ? '✓ Subscribed!' : 'Subscribe Now')}
@@ -354,13 +364,46 @@ function App() {
             )}
 
             <style dangerouslySetInnerHTML={{__html: `
-                /* Modal Overlay */
-                .modal-overlay {
+                /* Social Media Links Styles */
+                .social-links-container {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    gap: 16px;
+                    margin-top: 32px;
+                    padding-top: 24px;
+                    border-top: 1px solid rgba(255, 255, 255, 0.08);
+                }
+
+                .social-icon-link {
+                    color: rgba(255, 255, 255, 0.5);
+                    font-size: 20px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: all 0.3s ease;
+                    width: 46px;
+                    height: 46px;
+                    border-radius: 50%;
+                    background: rgba(255, 255, 255, 0.04);
+                    border: 1px solid rgba(255, 255, 255, 0.05);
+                }
+
+                .social-icon-link:hover {
+                    color: #fff;
+                    background: rgba(255, 255, 255, 0.1);
+                    border-color: rgba(255, 255, 255, 0.2);
+                    transform: translateY(-3px);
+                    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+                }
+
+                /* Unique isolated classes for Modal */
+                .sm-modal-overlay {
                     position: fixed;
                     inset: 0;
-                    background-color: rgba(0, 0, 0, 0.65);
-                    backdrop-filter: blur(10px);
-                    -webkit-backdrop-filter: blur(10px);
+                    background-color: rgba(0, 0, 0, 0.75);
+                    backdrop-filter: blur(12px);
+                    -webkit-backdrop-filter: blur(12px);
                     z-index: 9999;
                     display: flex;
                     align-items: center;
@@ -369,8 +412,7 @@ function App() {
                     animation: overlayFadeIn 0.3s ease-out forwards;
                 }
 
-                /* Modal Container */
-                .modal-container {
+                .sm-modal-container {
                     background: linear-gradient(145deg, #18181b 0%, #121214 100%);
                     border: 1px solid rgba(255, 255, 255, 0.08);
                     border-radius: 24px;
@@ -382,8 +424,7 @@ function App() {
                     animation: modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
                 }
 
-                /* Close Button */
-                .modal-close-btn {
+                .sm-modal-close-btn {
                     position: absolute;
                     top: 20px;
                     right: 20px;
@@ -399,53 +440,65 @@ function App() {
                     cursor: pointer;
                     transition: all 0.2s ease;
                 }
-                .modal-close-btn:hover {
+                .sm-modal-close-btn:hover {
                     background: rgba(255, 255, 255, 0.1);
                     color: #fff;
                     transform: scale(1.05);
                 }
 
-                /* Modal Header & Text */
-                .modal-header {
-                    text-align: center;
-                    margin-bottom: 28px;
+                /* Fixed Header Layout Structure */
+                .sm-modal-header {
+                    display: flex !important;
+                    flex-direction: column !important;
+                    align-items: center !important;
+                    text-align: center !important;
+                    margin-bottom: 28px !important;
+                    width: 100% !important;
                 }
-                .modal-icon-wrapper {
-                    width: 56px;
-                    height: 56px;
-                    background: rgba(16, 185, 129, 0.1);
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    margin: 0 auto 20px auto;
-                    box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+                
+                .sm-modal-icon-wrapper {
+                    width: 56px !important;
+                    height: 56px !important;
+                    background: rgba(16, 185, 129, 0.1) !important;
+                    border-radius: 50% !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    margin: 0 auto 16px auto !important;
+                    box-shadow: 0 0 20px rgba(16, 185, 129, 0.15) !important;
+                    flex-shrink: 0 !important;
                 }
-                .modal-icon {
-                    color: #10b981;
-                    font-size: 22px;
+                
+                .sm-modal-icon {
+                    color: #10b981 !important;
+                    font-size: 22px !important;
+                    margin: 0 !important;
                 }
-                .modal-header h3 {
-                    font-size: 24px;
-                    font-weight: 700;
-                    margin: 0 0 10px 0;
-                    color: #ffffff;
-                    letter-spacing: -0.02em;
+                
+                .sm-modal-title {
+                    font-size: 24px !important;
+                    font-weight: 700 !important;
+                    margin: 0 0 10px 0 !important;
+                    color: #ffffff !important;
+                    letter-spacing: -0.02em !important;
+                    line-height: 1.2 !important;
                 }
-                .modal-header p {
-                    font-size: 15px;
-                    color: #a1a1aa;
-                    margin: 0;
-                    line-height: 1.5;
+                
+                .sm-modal-desc {
+                    font-size: 15px !important;
+                    color: #a1a1aa !important;
+                    margin: 0 !important;
+                    line-height: 1.5 !important;
+                    max-width: 340px !important;
                 }
 
-                /* Form Elements */
-                .modal-form {
+                .sm-modal-form {
                     display: flex;
                     flex-direction: column;
                     gap: 20px;
                 }
-                .subscribe-input {
+                
+                .sm-subscribe-input {
                     width: 100%;
                     padding: 16px 20px;
                     border-radius: 12px;
@@ -457,28 +510,30 @@ function App() {
                     color: #fff;
                     transition: all 0.2s ease;
                 }
-                .subscribe-input::placeholder {
+                
+                .sm-subscribe-input::placeholder {
                     color: #71717a;
                 }
-                .subscribe-input:focus {
+                
+                .sm-subscribe-input:focus {
                     border-color: #10b981;
                     background: rgba(0, 0, 0, 0.3);
                     box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
                 }
-                .subscribe-input:disabled {
+                
+                .sm-subscribe-input:disabled {
                     opacity: 0.6;
                     cursor: not-allowed;
                 }
 
-                .turnstile-wrapper {
+                .sm-turnstile-wrapper {
                     display: flex;
                     justify-content: center;
                     min-height: 65px;
                     overflow: hidden;
                 }
 
-                /* Submit Button */
-                .subscribe-btn {
+                .sm-subscribe-btn {
                     width: 100%;
                     padding: 16px;
                     border-radius: 12px;
@@ -494,26 +549,29 @@ function App() {
                     align-items: center;
                     box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
                 }
-                .subscribe-btn:not(:disabled):hover {
+                
+                .sm-subscribe-btn:not(:disabled):hover {
                     background: #059669;
                     transform: translateY(-2px);
                     box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
                 }
-                .subscribe-btn:not(:disabled):active {
+                
+                .sm-subscribe-btn:not(:disabled):active {
                     transform: translateY(0);
                 }
-                .subscribe-btn:disabled {
-                    background: #27272a;
-                    color: #71717a;
+                
+                .sm-subscribe-btn:disabled {
+                    background: rgba(255, 255, 255, 0.05);
+                    color: rgba(255, 255, 255, 0.4);
                     box-shadow: none;
                     cursor: not-allowed;
                 }
-                .subscribe-btn.success {
+                
+                .sm-subscribe-btn.success {
                     background: #059669;
                     color: #fff;
                 }
 
-                /* Animations */
                 @keyframes overlayFadeIn {
                     from { opacity: 0; }
                     to { opacity: 1; }
@@ -523,19 +581,12 @@ function App() {
                     to { opacity: 1; transform: translateY(0) scale(1); }
                 }
 
-                /* Mobile Responsiveness */
                 @media (max-width: 480px) {
-                    .modal-container {
-                        padding: 32px 24px;
-                    }
-                    .modal-header h3 {
-                        font-size: 22px;
-                    }
-                    .modal-header p {
-                        font-size: 14px;
-                    }
-                    .turnstile-wrapper {
-                        transform: scale(0.9); /* Prevent Turnstile overflow on very small devices */
+                    .sm-modal-container { padding: 32px 24px; }
+                    .sm-modal-title { font-size: 22px !important; }
+                    .sm-modal-desc { font-size: 14px !important; }
+                    .sm-turnstile-wrapper {
+                        transform: scale(0.9);
                         transform-origin: center center;
                     }
                 }
