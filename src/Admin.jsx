@@ -63,6 +63,61 @@ function useRealtimeData(fetchFn, interval = 5000, dependencies = []) {
 }
 // --------------------------------------------------
 
+// --- PLATFORM ICON HELPER ---
+const PlatformIcon = ({ name, size = 16, color = '#fff' }) => {
+    if (!name) return null;
+    const p = name.toLowerCase();
+    
+    if (p.includes('spotify')) {
+        return (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+                <path d="M12 2C6.477 2 2 6.477 2 12c0 5.523 4.477 10 10 10s10-4.477 10-10C22 6.477 17.523 2 12 2zm4.586 14.424c-.18.295-.563.387-.857.207-2.35-1.434-5.305-1.76-8.786-.963-.335.077-.67-.133-.746-.467-.077-.334.132-.67.466-.745 3.82-1.046 7.076-.662 9.715.942.295.18.388.564.208.857zm1.22-3.242c-.226.367-.706.482-1.072.257-2.684-1.65-6.785-2.13-9.965-1.166-.413.127-.852-.108-.98-.52-.126-.413.108-.85.52-.977 3.633-1.1 8.16-.563 11.24 1.335.367.226.482.705.257 1.07zm.114-3.41c-3.21-1.905-8.5-2.08-11.56-1.15-.5.15-1.01-.13-1.16-.63-.15-.5.13-1.01.63-1.16 3.55-1.07 9.42-.87 13.12 1.33.45.27.6.86.33 1.31-.27.44-.86.59-1.31.32z"/>
+            </svg>
+        );
+    }
+    if (p.includes('apple')) {
+        return (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+                <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.62-1.48 3.608-2.925 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.482 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.214.046-2.675.808-3.536 1.818-.78.873-1.446 2.311-1.273 3.714 1.338.104 2.715-.688 3.564-1.702z"/>
+            </svg>
+        );
+    }
+    if (p.includes('youtube')) {
+        return (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+                <path d="M21.582 6.186a2.665 2.665 0 0 0-1.874-1.884C17.92 3.8 12 3.8 12 3.8s-5.92 0-7.708.502a2.665 2.665 0 0 0-1.874 1.884C1.9 8.01 1.9 12 1.9 12s0 3.99.518 5.814a2.665 2.665 0 0 0 1.874 1.884C6.08 20.2 12 20.2 12 20.2s5.92 0 7.708-.502a2.665 2.665 0 0 0 1.874-1.884C22.1 15.99 22.1 12 22.1 12s0-3.99-.518-5.814zM9.993 15.01V8.99L15.26 12l-5.267 3.01z"/>
+            </svg>
+        );
+    }
+    if (p.includes('amazon')) {
+        return (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+                <path d="M12.986 16.732c-1.472.637-3.418 1.015-5.32 1.015-3.376 0-6.196-1.12-7.666-2.181-.137-.1-.237.042-.128.188 1.802 2.457 5.163 3.774 8.796 3.774 2.115 0 4.194-.482 5.568-1.22.254-.136.03-.418-.25-.576z"/>
+                <path d="M14.542 16.89c-.198-.103-.314-.15-.178-.363.315-.494.636-1.077.92-1.637.065-.126-.046-.226-.168-.145-1.066.702-2.316 1.134-3.568 1.488-.19.053-.16.275.02.32 1.136.287 2.464.444 3.784.453.25.002.378-.002.355.077-.074.25-.198.545-.304.814-.07.177.106.31.258.194 1.34-1.026 2.695-2.26 3.824-3.58.125-.145.02-.336-.16-.275-1.138.384-2.52.705-3.882.906-.217.03-.314.123-.23.324.286.685.57 1.442.84 2.176.08.213-.086.335-.296.223z"/>
+                <path d="M16.5 4.5A4.5 4.5 0 0 0 12 9a4.5 4.5 0 0 0 4.5 4.5A4.5 4.5 0 0 0 21 9a4.5 4.5 0 0 0-4.5-4.5z"/>
+                <path d="M7.5 4.5A4.5 4.5 0 0 0 3 9a4.5 4.5 0 0 0 4.5 4.5A4.5 4.5 0 0 0 12 9a4.5 4.5 0 0 0-4.5-4.5z"/>
+            </svg>
+        );
+    }
+    if (p.includes('tidal')) {
+        return (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+                <path d="M12 2.667L8 6.666l4 4 4-4-4-3.999zM8 10.667L4 14.666l4 4 4-4-4-3.999zm8 0l-4 4 4 4 4-4-4-3.999zM12 18.667l-4 4 4 4 4-4-4-3.999z"/>
+            </svg>
+        );
+    }
+    
+    // Default generic music note icon
+    return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 18V5l12-2v13"></path>
+            <circle cx="6" cy="18" r="3"></circle>
+            <circle cx="18" cy="16" r="3"></circle>
+        </svg>
+    );
+};
+// ---------------------------------------------
+
 function Login({ setToken }) {
     const [step, setStep] = useState('password'); // 'password' or 'otp'
     const [password, setPassword] = useState('');
@@ -875,6 +930,20 @@ function Modal({ isOpen, onClose, title, message, onConfirm, confirmText='Confir
     );
 }
 
+// Custom Recharts Legend component to include Platform Icons
+const CustomPlatformLegend = ({ payload }) => {
+    return (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, justifyContent: 'center', paddingTop: 20 }}>
+            {payload.map((entry, index) => (
+                <div key={`item-${index}`} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <PlatformIcon name={entry.value} size={14} color={entry.color} />
+                    <span style={{ color: '#fff', fontSize: 12, fontWeight: 500 }}>{entry.value}</span>
+                </div>
+            ))}
+        </div>
+    );
+};
+
 // --- Views ---
 
 function DashboardView({ token, onLogout }) {
@@ -1070,7 +1139,7 @@ function DashboardView({ token, onLogout }) {
                                     contentStyle={{ background: '#18181b', borderRadius: 12, border: '1px solid #27272a', boxShadow: '0 10px 25px rgba(0,0,0,0.3)', color: '#fff' }}
                                     itemStyle={{ fontWeight: 600, color: '#fff' }}
                                 />
-                                <Legend iconType="circle" />
+                                <Legend content={<CustomPlatformLegend />} />
                             </PieChart>
                         </ResponsiveContainer>
                     </div>
@@ -1151,9 +1220,7 @@ function DashboardView({ token, onLogout }) {
                             border: '1px solid #3f3f46' 
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                                <div style={{ 
-                                    width: 12, height: 12, borderRadius: '50%', background: source.fill 
-                                }}></div>
+                                <PlatformIcon name={source.name} color={source.fill} size={16} />
                                 <span style={{ color: '#a1a1aa', fontSize: 13 }}>{source.name}</span>
                             </div>
                             <div style={{ fontSize: 24, fontWeight: 700, color: '#fff' }}>
