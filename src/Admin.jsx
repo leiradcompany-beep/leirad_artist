@@ -12,7 +12,6 @@ import {
     LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, 
     XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from 'recharts';
-import { useRealtimeData } from './hooks/useRealtimeData.js';
 
 import { API_BASE_URL } from './config.js';
 
@@ -27,6 +26,42 @@ function fetchApi(action, token, options = {}) {
         }
     }).then(res => res.json());
 }
+
+// --- INLINED HOOK TO FIX VERCEL DEPLOYMENT ERROR ---
+function useRealtimeData(fetchFn, interval = 5000, dependencies = []) {
+    const [data, setData] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [lastUpdateTime, setLastUpdateTime] = useState(null);
+
+    const fetchData = useCallback(async () => {
+        try {
+            const result = await fetchFn();
+            if (result) {
+                setData(result);
+                setLastUpdateTime(new Date());
+            }
+        } catch (error) {
+            console.error("Realtime fetch error:", error);
+        } finally {
+            setIsLoading(false);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [fetchFn, ...dependencies]);
+
+    useEffect(() => {
+        fetchData(); // Initial fetch
+        const timerId = setInterval(fetchData, interval); // Polling setup
+        return () => clearInterval(timerId); // Cleanup on unmount
+    }, [fetchData, interval]);
+
+    const formatLastUpdate = (date) => {
+        if (!date) return '';
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    };
+
+    return { data, isLoading, lastUpdateTime, formatLastUpdate };
+}
+// --------------------------------------------------
 
 function Login({ setToken }) {
     const [step, setStep] = useState('password'); // 'password' or 'otp'
@@ -545,7 +580,7 @@ function Drawer({ isOpen, onClose, title, children }) {
                     50% { opacity: 0.5; }
                 }
             `}</style>
-        </> // Fixed from </div> to </>
+        </>
     );
 }
 
