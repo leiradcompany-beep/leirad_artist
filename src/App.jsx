@@ -52,10 +52,8 @@ function App() {
 
     // ▼ EDIT YOUR SOCIAL MEDIA LINKS HERE ▼
     const socialAccounts = [
-        { platform: 'facebook', url: 'https://facebook.com/yourprofile' },
-        { platform: 'tiktok', url: 'https://tiktok.com/@yourprofile' },
-        { platform: 'instagram', url: 'https://instagram.com/yourprofile' },
-        { platform: 'twitter', url: 'https://twitter.com/yourprofile' }
+        { platform: 'facebook', url: 'https://www.facebook.com/LeiradOfficial/' },
+        { platform: 'tiktok', url: 'https://www.tiktok.com/@leirad.g.official' }
     ];
 
     useEffect(() => {
