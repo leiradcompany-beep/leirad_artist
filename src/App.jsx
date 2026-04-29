@@ -417,141 +417,254 @@ function App() {
 
             {/* Subscribe Modal */}
             {isModalOpen && (
-                <div style={{
-                    position: 'fixed',
-                    top: 0, left: 0, right: 0, bottom: 0,
-                    backgroundColor: 'rgba(0,0,0,0.7)',
-                    backdropFilter: 'blur(8px)',
-                    zIndex: 9999,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '20px'
-                }}>
-                    <div style={{
-                        background: '#18181b',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: '24px',
-                        padding: '40px',
-                        width: '100%',
-                        maxWidth: '440px',
-                        position: 'relative',
-                        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
-                        animation: 'fadeInUp 0.3s ease'
-                    }}>
+                <div 
+                    onClick={() => setIsModalOpen(false)}
+                    style={{
+                        position: 'fixed',
+                        top: 0, left: 0, right: 0, bottom: 0,
+                        backgroundColor: 'rgba(0,0,0,0.85)',
+                        backdropFilter: 'blur(12px)',
+                        WebkitBackdropFilter: 'blur(12px)',
+                        zIndex: 9999,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '16px',
+                        animation: 'modalFadeIn 0.3s ease-out'
+                    }}
+                >
+                    <div 
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                            background: 'linear-gradient(145deg, #1a1a1e 0%, #0f0f12 100%)',
+                            border: '1px solid rgba(255,255,255,0.08)',
+                            borderRadius: '24px',
+                            padding: 'clamp(24px, 5vw, 48px)',
+                            width: '100%',
+                            maxWidth: '480px',
+                            maxHeight: '90vh',
+                            overflowY: 'auto',
+                            position: 'relative',
+                            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.05)',
+                            animation: 'modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
+                        }}
+                    >
+                        {/* Decorative Background Element */}
+                        <div style={{
+                            position: 'absolute',
+                            top: '-50%',
+                            right: '-50%',
+                            width: '200%',
+                            height: '200%',
+                            background: 'radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 70%)',
+                            pointerEvents: 'none',
+                            zIndex: 0
+                        }} />
+
                         {/* Close Button */}
                         <button 
                             onClick={() => setIsModalOpen(false)}
                             style={{
                                 position: 'absolute',
-                                top: '20px',
-                                right: '20px',
-                                background: 'transparent',
-                                border: 'none',
-                                color: 'rgba(255,255,255,0.5)',
-                                fontSize: '24px',
+                                top: '16px',
+                                right: '16px',
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '50%',
+                                background: 'rgba(255,255,255,0.05)',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                color: 'rgba(255,255,255,0.6)',
+                                fontSize: '20px',
                                 cursor: 'pointer',
-                                transition: '0.2s'
+                                transition: 'all 0.2s ease',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                zIndex: 1
                             }}
-                            onMouseOver={(e) => e.currentTarget.style.color = '#fff'}
-                            onMouseOut={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.5)'}
+                            onMouseOver={(e) => {
+                                e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                                e.currentTarget.style.color = '#fff';
+                                e.currentTarget.style.transform = 'rotate(90deg)';
+                            }}
+                            onMouseOut={(e) => {
+                                e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                                e.currentTarget.style.color = 'rgba(255,255,255,0.6)';
+                                e.currentTarget.style.transform = 'rotate(0deg)';
+                            }}
                         >
-                            &times;
+                            ×
                         </button>
 
-                        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-                            <h3 style={{
-                                fontSize: '24px',
-                                fontWeight: '700',
-                                margin: '0 0 12px 0',
-                                color: '#fff',
-                                letterSpacing: '-0.02em'
-                            }}>Stay Updated</h3>
-                            <p style={{
-                                fontSize: '15px',
-                                color: 'rgba(255,255,255,0.6)',
-                                margin: 0,
-                                lineHeight: '1.5'
-                            }}>Subscribe to get the latest news and releases directly to your inbox.</p>
-                        </div>
-                        
-                        <form onSubmit={handleSubscribe}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                                <input 
-                                    type="email" 
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="Enter your email address"
-                                    required
-                                    style={{
-                                        width: '100%',
-                                        padding: '16px 20px',
-                                        borderRadius: '12px',
-                                        fontSize: '15px',
-                                        outline: 'none',
-                                        boxSizing: 'border-box',
-                                        border: '1px solid rgba(255,255,255,0.1)',
-                                        background: 'rgba(255,255,255,0.03)',
-                                        color: '#fff',
-                                        transition: 'all 0.2s ease'
-                                    }}
-                                    onFocus={(e) => {
-                                        e.currentTarget.style.borderColor = '#10b981';
-                                        e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
-                                    }}
-                                    onBlur={(e) => {
-                                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
-                                        e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
-                                    }}
-                                />
-                                
-                                <div style={{ display: 'flex', justifyContent: 'center' }}>
-                                    <Turnstile 
-                                        siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY} 
-                                        onSuccess={(token) => setTurnstileToken(token)}
-                                        options={{ theme: 'dark' }}
-                                    />
-                                </div>
-                                
-                                <button 
-                                    type="submit"
-                                    style={{
-                                        width: '100%',
-                                        padding: '16px',
-                                        borderRadius: '12px',
-                                        border: 'none',
-                                        background: subscribed ? '#059669' : '#10b981',
-                                        color: '#fff',
-                                        fontSize: '16px',
-                                        fontWeight: '600',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease',
-                                        marginTop: '8px'
-                                    }}
-                                    onMouseOver={(e) => {
-                                        if (!subscribed) {
-                                            e.currentTarget.style.background = '#059669';
-                                            e.currentTarget.style.transform = 'translateY(-1px)';
-                                        }
-                                    }}
-                                    onMouseOut={(e) => {
-                                        if (!subscribed) {
-                                            e.currentTarget.style.background = '#10b981';
-                                            e.currentTarget.style.transform = 'translateY(0)';
-                                        }
-                                    }}
-                                >
-                                    {subscribed ? '✓ Subscribed!' : 'Subscribe Now'}
-                                </button>
+                        {/* Modal Content */}
+                        <div style={{ position: 'relative', zIndex: 1 }}>
+                            {/* Icon/Logo Section */}
+                            <div style={{
+                                width: '64px',
+                                height: '64px',
+                                borderRadius: '16px',
+                                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                margin: '0 auto 24px',
+                                boxShadow: '0 12px 24px rgba(16,185,129,0.3)',
+                                fontSize: '28px'
+                            }}>
+                                ✉️
                             </div>
-                        </form>
+
+                            {/* Header */}
+                            <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+                                <h3 style={{
+                                    fontSize: 'clamp(22px, 4vw, 28px)',
+                                    fontWeight: '700',
+                                    margin: '0 0 12px 0',
+                                    background: 'linear-gradient(135deg, #ffffff 0%, #a1a1aa 100%)',
+                                    WebkitBackgroundClip: 'text',
+                                    WebkitTextFillColor: 'transparent',
+                                    backgroundClip: 'text',
+                                    letterSpacing: '-0.02em',
+                                    lineHeight: '1.2'
+                                }}>Stay in the Loop</h3>
+                                <p style={{
+                                    fontSize: 'clamp(14px, 2.5vw, 15px)',
+                                    color: 'rgba(255,255,255,0.6)',
+                                    margin: 0,
+                                    lineHeight: '1.6',
+                                    maxWidth: '400px',
+                                    marginLeft: 'auto',
+                                    marginRight: 'auto'
+                                }}>Get exclusive updates, new releases, and behind-the-scenes content delivered straight to your inbox.</p>
+                            </div>
+                            
+                            {/* Form */}
+                            <form onSubmit={handleSubscribe}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                    {/* Email Input */}
+                                    <div style={{ position: 'relative' }}>
+                                        <input 
+                                            type="email" 
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            placeholder="your@email.com"
+                                            required
+                                            style={{
+                                                width: '100%',
+                                                padding: '16px 20px',
+                                                borderRadius: '14px',
+                                                fontSize: 'clamp(14px, 2.5vw, 15px)',
+                                                outline: 'none',
+                                                boxSizing: 'border-box',
+                                                border: '2px solid rgba(255,255,255,0.08)',
+                                                background: 'rgba(255,255,255,0.03)',
+                                                color: '#fff',
+                                                transition: 'all 0.3s ease',
+                                                fontFamily: 'inherit'
+                                            }}
+                                            onFocus={(e) => {
+                                                e.currentTarget.style.borderColor = '#10b981';
+                                                e.currentTarget.style.background = 'rgba(16,185,129,0.05)';
+                                                e.currentTarget.style.boxShadow = '0 0 0 4px rgba(16,185,129,0.1)';
+                                            }}
+                                            onBlur={(e) => {
+                                                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+                                                e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+                                                e.currentTarget.style.boxShadow = 'none';
+                                            }}
+                                        />
+                                    </div>
+                                    
+                                    {/* Turnstile */}
+                                    <div style={{ 
+                                        display: 'flex', 
+                                        justifyContent: 'center',
+                                        transform: 'scale(0.9)',
+                                        transformOrigin: 'center'
+                                    }}>
+                                        <Turnstile 
+                                            siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY} 
+                                            onSuccess={(token) => setTurnstileToken(token)}
+                                            options={{ theme: 'dark' }}
+                                        />
+                                    </div>
+                                    
+                                    {/* Submit Button */}
+                                    <button 
+                                        type="submit"
+                                        style={{
+                                            width: '100%',
+                                            padding: '16px 24px',
+                                            borderRadius: '14px',
+                                            border: 'none',
+                                            background: subscribed 
+                                                ? 'linear-gradient(135deg, #059669 0%, #10b981 100%)'
+                                                : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                            color: '#fff',
+                                            fontSize: 'clamp(15px, 2.5vw, 16px)',
+                                            fontWeight: '600',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                            boxShadow: subscribed 
+                                                ? '0 8px 16px rgba(5,150,105,0.3)'
+                                                : '0 8px 16px rgba(16,185,129,0.4)',
+                                            letterSpacing: '0.01em',
+                                            position: 'relative',
+                                            overflow: 'hidden'
+                                        }}
+                                        onMouseOver={(e) => {
+                                            if (!subscribed) {
+                                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                                e.currentTarget.style.boxShadow = '0 12px 24px rgba(16,185,129,0.5)';
+                                            }
+                                        }}
+                                        onMouseOut={(e) => {
+                                            if (!subscribed) {
+                                                e.currentTarget.style.transform = 'translateY(0)';
+                                                e.currentTarget.style.boxShadow = '0 8px 16px rgba(16,185,129,0.4)';
+                                            }
+                                        }}
+                                    >
+                                        {subscribed ? (
+                                            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                                                <span style={{ fontSize: '18px' }}>✓</span>
+                                                <span>Subscribed!</span>
+                                            </span>
+                                        ) : (
+                                            'Subscribe Now'
+                                        )}
+                                    </button>
+
+                                    {/* Privacy Note */}
+                                    <p style={{
+                                        fontSize: '12px',
+                                        color: 'rgba(255,255,255,0.4)',
+                                        textAlign: 'center',
+                                        margin: '8px 0 0 0',
+                                        lineHeight: '1.5'
+                                    }}>
+                                        No spam, ever. Unsubscribe anytime.
+                                    </p>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
             )}
             <style dangerouslySetInnerHTML={{__html: `
-                @keyframes fadeInUp {
-                    from { opacity: 0; transform: translateY(20px) scale(0.95); }
-                    to { opacity: 1; transform: translateY(0) scale(1); }
+                @keyframes modalFadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes modalSlideUp {
+                    from { 
+                        opacity: 0; 
+                        transform: translateY(30px) scale(0.95); 
+                    }
+                    to { 
+                        opacity: 1; 
+                        transform: translateY(0) scale(1); 
+                    }
                 }
             `}} />
         </>
