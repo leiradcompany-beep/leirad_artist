@@ -378,40 +378,6 @@ function App() {
                             Facebook
                         </a>
                         <a 
-                            href="#" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                padding: '12px 20px',
-                                borderRadius: '12px',
-                                background: 'rgba(255,255,255,0.08)',
-                                border: '1px solid rgba(255,255,255,0.15)',
-                                color: '#fff',
-                                textDecoration: 'none',
-                                fontSize: '14px',
-                                fontWeight: '500',
-                                transition: 'all 0.2s ease',
-                                minWidth: '140px',
-                                justifyContent: 'center'
-                            }}
-                            onMouseOver={(e) => {
-                                e.currentTarget.style.background = 'rgba(255,255,255,0.15)';
-                                e.currentTarget.style.transform = 'translateY(-2px)';
-                                e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.2)';
-                            }}
-                            onMouseOut={(e) => {
-                                e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
-                                e.currentTarget.style.transform = 'translateY(0)';
-                                e.currentTarget.style.boxShadow = 'none';
-                            }}
-                        >
-                            <FaInstagram size={18} />
-                            Instagram
-                        </a>
-                        <a 
                             href="https://www.tiktok.com/@leirad.g.official" 
                             target="_blank" 
                             rel="noopener noreferrer"
