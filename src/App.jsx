@@ -38,8 +38,12 @@ function App() {
 
         // Dynamically fetch from the configured environment API URL
         fetch(`${API_BASE_URL}/get_release.php?s=${shortcode}`)
-            .then(res => res.json())
+            .then(res => {
+                console.log('API Response Status:', res.status);
+                return res.json();
+            })
             .then(data => {
+                console.log('API Response Data:', data);
                 if (data.success) {
                     setRelease(data.data);
                     // Automatically show popup modal when a release is visited
@@ -47,11 +51,13 @@ function App() {
                         setIsModalOpen(true);
                     }, 1500); // 1.5s delay for better UX
                 } else {
+                    console.error('API Error:', data.error);
                     setError(data.error || 'Release not found.');
                 }
                 setLoading(false);
             })
             .catch(err => {
+                console.error('Fetch Error:', err);
                 setError('Failed to load release from API.');
                 setLoading(false);
             });
@@ -118,6 +124,28 @@ function App() {
             <div className="container not-found">
                 <h1>Release Not Found</h1>
                 <p>{error}</p>
+                <p style={{ marginTop: '20px', fontSize: '14px', color: '#a1a1aa' }}>
+                    Shortcode: {shortcode}
+                </p>
+                <p style={{ fontSize: '14px', color: '#a1a1aa' }}>
+                    API URL: {API_BASE_URL}/get_release.php?s={shortcode}
+                </p>
+                <button 
+                    onClick={() => window.location.href = '/'}
+                    style={{
+                        marginTop: '20px',
+                        padding: '12px 24px',
+                        background: '#10b981',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        fontWeight: '500'
+                    }}
+                >
+                    Go to Home
+                </button>
             </div>
         );
     }
