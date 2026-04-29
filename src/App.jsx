@@ -207,7 +207,7 @@ function App() {
                                 className="link-item" 
                                 target="_blank" 
                                 rel="noopener noreferrer"
-                                onClick={(e) => {
+                                onClick={async (e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
                                     
@@ -221,36 +221,69 @@ function App() {
                                     };
                                     
                                     let tracked = false;
+                                    let trackingFailed = false;
+                                    
                                     const doOpen = () => {
                                         if (!tracked) {
                                             tracked = true;
                                             openLink();
+                                            if (trackingFailed) {
+                                                console.warn('Click tracking failed, but link was opened');
+                                            }
                                         }
                                     };
                                     
-                                    // Always open the link after a short timeout as fallback
-                                    const fallbackTimer = setTimeout(doOpen, 350);
-                                    
                                     try {
+                                        let trackingSuccess = false;
+                                        
                                         if (navigator.sendBeacon) {
-                                            navigator.sendBeacon(`${API_BASE_URL}/track_click.php`, new Blob([trackData], { type: 'application/json' }));
-                                            clearTimeout(fallbackTimer);
-                                            doOpen();
-                                        } else {
-                                            fetch(`${API_BASE_URL}/track_click.php`, {
-                                                method: 'POST',
-                                                headers: { 'Content-Type': 'application/json' },
-                                                body: trackData,
-                                                keepalive: true
-                                            })
-                                            .catch(() => {})
-                                            .finally(() => {
-                                                clearTimeout(fallbackTimer);
-                                                doOpen();
-                                            });
+                                            try {
+                                                trackingSuccess = navigator.sendBeacon(
+                                                    `${API_BASE_URL}/track_click.php`, 
+                                                    new Blob([trackData], { type: 'application/json' })
+                                                );
+                                            } catch (beaconError) {
+                                                console.warn('sendBeacon failed:', beaconError);
+                                                trackingSuccess = false;
+                                            }
                                         }
-                                    } catch (err) {
-                                        clearTimeout(fallbackTimer);
+                                        
+                                        if (trackingSuccess) {
+                                            tracked = true;
+                                            openLink();
+                                        } else {
+                                            const fallbackTimer = setTimeout(() => {
+                                                if (!tracked) {
+                                                    trackingFailed = true;
+                                                    doOpen();
+                                                }
+                                            }, 500);
+                                            
+                                            try {
+                                                const response = await fetch(`${API_BASE_URL}/track_click.php`, {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: trackData,
+                                                    keepalive: true
+                                                });
+                                                
+                                                if (response.ok) {
+                                                    clearTimeout(fallbackTimer);
+                                                    tracked = true;
+                                                    openLink();
+                                                } else {
+                                                    throw new Error(`Tracking failed with status: ${response.status}`);
+                                                }
+                                            } catch (fetchError) {
+                                                console.warn('Fetch tracking failed:', fetchError);
+                                                clearTimeout(fallbackTimer);
+                                                trackingFailed = true;
+                                                doOpen();
+                                            }
+                                        }
+                                    } catch (error) {
+                                        console.error('Click tracking error:', error);
+                                        trackingFailed = true;
                                         doOpen();
                                     }
                                 }}
