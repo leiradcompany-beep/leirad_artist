@@ -5,13 +5,13 @@ import toast, { Toaster } from 'react-hot-toast';
 import { 
     LayoutDashboard, LogOut, Plus, Edit2, Trash2, Share2, 
     Home as HomeIcon, KeyRound, X, ExternalLink, Menu, Users, Mail,
-    MousePointerClick, RefreshCw
+    MousePointerClick
 } from 'lucide-react';
 import Preloader from './Preloader.jsx';
 import { 
     LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, 
     XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
-       } from 'recharts';
+} from 'recharts';
 import { useRealtimeData } from './hooks/useRealtimeData.js';
 
 import { API_BASE_URL } from './config.js';
@@ -545,7 +545,7 @@ function Drawer({ isOpen, onClose, title, children }) {
                     50% { opacity: 0.5; }
                 }
             `}</style>
-        </>
+        </> // Fixed from </div> to </>
     );
 }
 
@@ -883,8 +883,9 @@ function DashboardView({ token, onLogout }) {
         toast.success('Analytics report exported');
     };
 
-    if (isLoading) return <Preloader />;
-    if (!analytics) return <div style={{ padding: 40, textAlign: 'center', color: '#fff' }}>Failed to load analytics</div>;
+    // Show preloader only on initial fetch when analytics data is not yet loaded
+    if (isLoading && !analytics) return <Preloader />;
+    if (!analytics && !isLoading) return <div style={{ padding: 40, textAlign: 'center', color: '#fff' }}>Failed to load analytics</div>;
 
     const { total_releases, total_subscribers, total_clicks, activity, sources } = analytics;
 
@@ -943,28 +944,6 @@ function DashboardView({ token, onLogout }) {
                         onMouseOut={e => e.currentTarget.style.background = '#fff'}
                     >
                         <LayoutDashboard size={16} /> Export Report
-                    </button>
-                    <button 
-                        onClick={() => {
-                            fetchAnalytics();
-                            toast.success('Data refreshed');
-                        }}
-                        style={{ 
-                            display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', 
-                            background: '#18181b', color: '#fff', border: '1px solid #27272a', borderRadius: 8, 
-                            cursor: 'pointer', fontWeight: 600, fontSize: 14, transition: '0.2s'
-                        }}
-                        onMouseOver={e => {
-                            e.currentTarget.style.background = '#27272a';
-                            e.currentTarget.style.borderColor = '#3f3f46';
-                        }}
-                        onMouseOut={e => {
-                            e.currentTarget.style.background = '#18181b';
-                            e.currentTarget.style.borderColor = '#27272a';
-                        }}
-                        title="Refresh Data"
-                    >
-                        <RefreshCw size={16} /> Refresh
                     </button>
                 </div>
             </div>
@@ -1155,7 +1134,7 @@ function DashboardView({ token, onLogout }) {
 
 function ReleasesView({ token, onLogout }) {
     const [releases, setReleases] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
     
     // Drawer State
     const [drawerOpen, setDrawerOpen] = useState(false);
@@ -1166,12 +1145,11 @@ function ReleasesView({ token, onLogout }) {
     const [releaseToDelete, setReleaseToDelete] = useState(null);
 
     const loadReleases = () => {
-        setIsLoading(true);
         fetchApi('list', token).then(data => {
             if (data.success) setReleases(data.data);
             else if (data.error === 'Unauthorized') onLogout();
-            setIsLoading(false);
-        }).catch(() => setIsLoading(false));
+            setIsInitialLoad(false);
+        }).catch(() => setIsInitialLoad(false));
     };
 
     useEffect(() => { loadReleases(); }, [token]);
@@ -1210,7 +1188,7 @@ function ReleasesView({ token, onLogout }) {
         loadReleases(); // refresh after close
     };
 
-    if (isLoading) return <Preloader />;
+    if (isInitialLoad) return <Preloader />;
 
     return (
         <>
@@ -1454,7 +1432,7 @@ function EditHomeView({ token, onLogout }) {
     const [heroSub, setHeroSub] = useState('');
     const [bgFile, setBgFile] = useState(null);
     const [profileFile, setProfileFile] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
 
     useEffect(() => {
         fetchApi('get_home', token).then(data => {
@@ -1463,8 +1441,8 @@ function EditHomeView({ token, onLogout }) {
                 setHeroTitle(data.data.hero_title || '');
                 setHeroSub(data.data.hero_subtitle || '');
             } else if (data.error === 'Unauthorized') onLogout();
-            setIsLoading(false);
-        }).catch(() => setIsLoading(false));
+            setIsInitialLoad(false);
+        }).catch(() => setIsInitialLoad(false));
     }, [token, onLogout]);
 
     const handleSave = async (e) => {
@@ -1488,7 +1466,7 @@ function EditHomeView({ token, onLogout }) {
         }
     };
 
-    if (isLoading) return <Preloader />;
+    if (isInitialLoad) return <Preloader />;
 
     return (
         <div style={{ maxWidth: 800 }}>
@@ -1524,7 +1502,7 @@ function EditHomeView({ token, onLogout }) {
 
 function SubscribersView({ token, onLogout }) {
     const [subscribers, setSubscribers] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const [searchTerm, setSearchTerm] = useState('');
     const [pagination, setPagination] = useState({
@@ -1541,15 +1519,14 @@ function SubscribersView({ token, onLogout }) {
     const [deleteAllModalOpen, setDeleteAllModalOpen] = useState(false);
 
     const loadSubscribers = (page = 1, search = '') => {
-        setIsLoading(true);
         fetchApi(`list_subscribers&page=${page}&per_page=${itemsPerPage}&search=${encodeURIComponent(search)}`, token).then(data => {
             if (data.success) {
                 setSubscribers(data.data);
                 setPagination(data.pagination || { current_page: 1, per_page: 10, total: 0, total_pages: 1 });
             }
             else if (data.error === 'Unauthorized') onLogout();
-            setIsLoading(false);
-        }).catch(() => setIsLoading(false));
+            setIsInitialLoad(false);
+        }).catch(() => setIsInitialLoad(false));
     };
 
     useEffect(() => { loadSubscribers(); }, [token]);
@@ -1642,7 +1619,7 @@ function SubscribersView({ token, onLogout }) {
         loadSubscribers(newPage, searchTerm);
     };
 
-    if (isLoading) return <Preloader />;
+    if (isInitialLoad) return <Preloader />;
 
     return (
         <>
@@ -1918,7 +1895,7 @@ function ChangePasswordView({ token, setToken }) {
     const [adminEmail, setAdminEmail] = useState('');
     const [currentEmail, setCurrentEmail] = useState('');
     const [maskedEmail, setMaskedEmail] = useState('');
-    const [emailLoaded, setEmailLoaded] = useState(false);
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
 
     useEffect(() => {
         // Load current admin email
@@ -1927,8 +1904,8 @@ function ChangePasswordView({ token, setToken }) {
                 setCurrentEmail(data.email);
                 setMaskedEmail(data.masked_email);
             }
-            setEmailLoaded(true);
-        });
+            setIsInitialLoad(false);
+        }).catch(() => setIsInitialLoad(false));
     }, [token]);
 
     const handleSavePassword = async (e) => {
@@ -1991,7 +1968,7 @@ function ChangePasswordView({ token, setToken }) {
         }
     };
 
-    if (!emailLoaded) return <Preloader />;
+    if (isInitialLoad) return <Preloader />;
 
     return (
         <div style={{ maxWidth: 800 }}>
