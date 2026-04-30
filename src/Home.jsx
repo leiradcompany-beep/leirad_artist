@@ -14,7 +14,6 @@ export default function Home() {
     const [releaseView, setReleaseView] = useState('grid'); // Default view: grid, list, carousel
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(10); // Number of releases per page
-    const [cookieConsentReady, setCookieConsentReady] = useState(false);
 
     useEffect(() => {
         fetch(`${API_BASE_URL}/get_home.php`)
@@ -35,89 +34,207 @@ export default function Home() {
             s0.parentNode.insertBefore(s1, s0);
         })();
 
-        // Load CookieConsent CSS
-        const cssLink = document.createElement('link');
-        cssLink.rel = 'stylesheet';
-        cssLink.href = 'https://cdn.jsdelivr.net/npm/cookieconsent@3/dist/cookieconsent.css';
-        document.head.appendChild(cssLink);
+        // Initialize CookieConsent
+        const initCookieConsent = () => {
+            // Load CSS
+            const cssLink = document.createElement('link');
+            cssLink.rel = 'stylesheet';
+            cssLink.href = 'https://cdn.jsdelivr.net/npm/cookieconsent@3/dist/cookieconsent.css';
+            document.head.appendChild(cssLink);
 
-        // Load CookieConsent JS
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/cookieconsent@3/dist/cookieconsent.umd.js';
-        script.async = true;
-        
-        script.onload = () => {
-            // Initialize CookieConsent once the script is loaded
-            if (window.CookieConsent) {
-                window.CookieConsent.run({
-                    guiOptions: {
-                        consentModal: {
-                            layout: "box",
-                            position: "bottom right"
-                        }
-                    },
-                    categories: {
-                        necessary: {
-                            readOnly: true
+            // Load JS
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/cookieconsent@3/dist/cookieconsent.umd.js';
+            script.async = true;
+            
+            script.onload = () => {
+                // Initialize CookieConsent after script is loaded
+                if (window.CookieConsent) {
+                    // First, create the plugin instance
+                    const cc = window.CookieConsent;
+                    
+                    cc.run({
+                        // Core options
+                        currentLang: 'en',
+                        autoclear_cookies: true,
+                        page_scripts: true,
+                        
+                        // GUI Options
+                        guiOptions: {
+                            consentModal: {
+                                layout: "box",
+                                position: "bottom right",
+                                flipButtons: false,
+                                equalWeightButtons: true
+                            }
                         },
-                        analytics: {}
-                    },
-                    language: {
-                        default: "en",
-                        translations: {
-                            en: {
-                                consentModal: {
-                                    title: "We use cookies",
-                                    description: "This website uses cookies to improve your experience.",
-                                    acceptAllBtn: "Accept all",
-                                    acceptNecessaryBtn: "Reject all"
+                        
+                        // Cookie settings
+                        onFirstAction: function(userPrefs) {
+                            console.log('User first action:', userPrefs);
+                        },
+                        
+                        onAccept: function(cookie) {
+                            console.log('Cookies accepted');
+                            // Load analytics here if needed
+                            if (cc.allowedCategory('analytics')) {
+                                const analyticsScript = document.createElement('script');
+                                analyticsScript.src = 'https://www.googletagmanager.com/gtag/js?id=YOUR-GA-ID';
+                                analyticsScript.async = true;
+                                document.head.appendChild(analyticsScript);
+                            }
+                        },
+                        
+                        onChange: function(cookie, changedCategories) {
+                            console.log('Cookie preferences changed:', changedCategories);
+                        },
+                        
+                        // Categories
+                        categories: {
+                            necessary: {
+                                enabled: true,
+                                readOnly: true
+                            },
+                            analytics: {
+                                enabled: false,
+                                readOnly: false,
+                                autoClear: {
+                                    cookies: [{
+                                        name: /^_ga/,
+                                        path: '/',
+                                        domain: window.location.hostname
+                                    }]
+                                }
+                            },
+                            marketing: {
+                                enabled: false,
+                                readOnly: false
+                            }
+                        },
+                        
+                        // Language settings
+                        language: {
+                            default: 'en',
+                            translations: {
+                                en: {
+                                    consentModal: {
+                                        title: "We use cookies",
+                                        description: "This website uses cookies to enhance your browsing experience and analyze our traffic. By clicking 'Accept all', you consent to our use of cookies.",
+                                        acceptAllBtn: "Accept all",
+                                        acceptNecessaryBtn: "Reject all",
+                                        showPreferencesBtn: "Manage preferences",
+                                        footer: `
+                                            <a href="/privacy-policy" target="_blank">Privacy Policy</a>
+                                            <a href="/cookie-policy" target="_blank">Cookie Policy</a>
+                                        `
+                                    },
+                                    preferencesModal: {
+                                        title: "Cookie Preferences",
+                                        acceptAllBtn: "Accept all",
+                                        acceptNecessaryBtn: "Reject all",
+                                        savePreferencesBtn: "Save preferences",
+                                        closeIconLabel: "Close modal",
+                                        serviceCounterLabel: "Service|Services",
+                                        sections: [
+                                            {
+                                                title: 'Cookie Usage',
+                                                description: 'We use cookies to ensure the basic functionalities of the website and to enhance your online experience. You can choose for each category to opt-in/out whenever you want.'
+                                            },
+                                            {
+                                                title: 'Strictly Necessary Cookies',
+                                                description: 'These cookies are essential for the proper functioning of my website. Without these cookies, the website would not work properly.',
+                                                linkedCategory: 'necessary'
+                                            },
+                                            {
+                                                title: 'Analytics Cookies',
+                                                description: 'These cookies collect information about how you use our website, for instance which pages you visit most often. All information these cookies collect is used to improve how the website works.',
+                                                linkedCategory: 'analytics'
+                                            },
+                                            {
+                                                title: 'Marketing Cookies',
+                                                description: 'These cookies are used to make advertising messages more relevant to you. They perform functions like preventing the same ad from continuously reappearing.',
+                                                linkedCategory: 'marketing'
+                                            }
+                                        ]
+                                    }
                                 }
                             }
                         }
-                    }
-                });
-                
-                setCookieConsentReady(true);
-            }
+                    });
+
+                    // Add custom styles for dark theme
+                    const style = document.createElement('style');
+                    style.textContent = `
+                        /* Override CookieConsent styles for dark theme */
+                        #cc-main {
+                            --cc-font-family: 'Inter', sans-serif;
+                            --cc-font-size: 14px;
+                            --cc-bg: #18181b;
+                            --cc-primary-color: #10b981;
+                            --cc-secondary-color: #fff;
+                            --cc-btn-primary-bg: #10b981;
+                            --cc-btn-primary-color: #000;
+                            --cc-btn-primary-hover-bg: #059669;
+                            --cc-btn-primary-border-color: transparent;
+                            --cc-btn-secondary-bg: rgba(255, 255, 255, 0.1);
+                            --cc-btn-secondary-color: #fff;
+                            --cc-btn-secondary-hover-bg: rgba(255, 255, 255, 0.2);
+                            --cc-btn-secondary-border-color: rgba(255, 255, 255, 0.2);
+                            --cc-toggle-bg-off: #666;
+                            --cc-toggle-bg-on: #10b981;
+                            --cc-toggle-bg-readonly: #444;
+                            --cc-toggle-knob-bg: #fff;
+                            --cc-toggle-knob-icon-color: #fff;
+                            --cc-cookie-category-block-bg: rgba(255, 255, 255, 0.05);
+                            --cc-cookie-category-block-border: rgba(255, 255, 255, 0.1);
+                            --cc-cookie-category-block-hover-bg: rgba(255, 255, 255, 0.08);
+                            --cc-section-border: rgba(255, 255, 255, 0.1);
+                            --cc-webkit-scrollbar-bg: transparent;
+                            --cc-webkit-scrollbar-hover-bg: rgba(255, 255, 255, 0.1);
+                            --cc-overlay-bg: rgba(0, 0, 0, 0.65);
+                            --cc-separator-border: rgba(255, 255, 255, 0.1);
+                        }
+                        
+                        #cc-main .cm__btn,
+                        #cc-main .pm__btn {
+                            border-radius: 8px;
+                            font-weight: 500;
+                            letter-spacing: 0.5px;
+                        }
+                        
+                        #cc-main .cm__desc,
+                        #cc-main .pm__desc {
+                            line-height: 1.6;
+                        }
+                        
+                        #cc-main a {
+                            color: #10b981 !important;
+                        }
+                        
+                        #cc-main a:hover {
+                            color: #34d399 !important;
+                        }
+                    `;
+                    document.head.appendChild(style);
+                }
+            };
+            
+            script.onerror = () => {
+                console.error('Failed to load CookieConsent script');
+            };
+            
+            document.head.appendChild(script);
         };
-        
-        script.onerror = () => {
-            console.error('Failed to load CookieConsent script');
-        };
-        
-        document.head.appendChild(script);
+
+        // Initialize CookieConsent with slight delay to ensure DOM is ready
+        setTimeout(initCookieConsent, 100);
 
         // Cleanup function
         return () => {
-            // Remove CookieConsent elements when component unmounts
-            if (cssLink.parentNode) {
-                cssLink.parentNode.removeChild(cssLink);
-            }
-            if (script.parentNode) {
-                script.parentNode.removeChild(script);
-            }
-            // Remove any CookieConsent DOM elements
-            const cookieConsentElements = document.querySelectorAll('[id*="cc-"], #cookieconsent\\:');
-            cookieConsentElements.forEach(el => el.remove());
+            const consentElements = document.querySelectorAll('[id*="cc-"], #cc-main, #cc--main');
+            consentElements.forEach(el => el.remove());
         };
     }, []);
-
-    // Add analytics script that respects cookie consent
-    useEffect(() => {
-        if (cookieConsentReady) {
-            const analyticsScript = document.createElement('script');
-            analyticsScript.type = 'text/plain';
-            analyticsScript.setAttribute('data-category', 'analytics');
-            analyticsScript.textContent = 'console.log("Analytics loaded only after consent");';
-            document.head.appendChild(analyticsScript);
-
-            return () => {
-                if (analyticsScript.parentNode) {
-                    analyticsScript.parentNode.removeChild(analyticsScript);
-                }
-            };
-        }
-    }, [cookieConsentReady]);
 
     const handleSubscribe = async (e) => {
         e.preventDefault();
