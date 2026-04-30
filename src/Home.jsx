@@ -126,7 +126,6 @@ export default function Home() {
             <div className="hero-section">
                 <h1>{home.artist_name}</h1>
                 <h2>{home.hero_title}</h2>
-                <p>{home.hero_subtitle}</p>
                 <iframe 
                     data-testid="embed-iframe" 
                     className="spotify-embed"
@@ -137,6 +136,7 @@ export default function Home() {
                     allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
                     loading="lazy"
                 ></iframe>
+                <p>{home.hero_subtitle}</p>
             </div>
 
             {/* Releases Section - Responsive Grid/Carousel */}
