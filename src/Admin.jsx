@@ -1534,6 +1534,9 @@ function EditHomeView({ token, onLogout }) {
     const [heroSub, setHeroSub] = useState('');
     const [bgFile, setBgFile] = useState(null);
     const [profileFile, setProfileFile] = useState(null);
+    const [aboutMeTitle, setAboutMeTitle] = useState('');
+    const [aboutMeContent, setAboutMeContent] = useState('');
+    const [aboutMeImageFile, setAboutMeImageFile] = useState(null);
     const [isInitialLoad, setIsInitialLoad] = useState(true);
 
     useEffect(() => {
@@ -1542,6 +1545,8 @@ function EditHomeView({ token, onLogout }) {
                 setArtist(data.data.artist_name || '');
                 setHeroTitle(data.data.hero_title || '');
                 setHeroSub(data.data.hero_subtitle || '');
+                setAboutMeTitle(data.data.about_me_title || 'About Me');
+                setAboutMeContent(data.data.about_me_content || '');
             } else if (data.error === 'Unauthorized') onLogout();
             setIsInitialLoad(false);
         }).catch(() => setIsInitialLoad(false));
@@ -1554,8 +1559,11 @@ function EditHomeView({ token, onLogout }) {
         formData.append('artist_name', artist);
         formData.append('hero_title', heroTitle);
         formData.append('hero_subtitle', heroSub);
+        formData.append('about_me_title', aboutMeTitle);
+        formData.append('about_me_content', aboutMeContent);
         if (bgFile) formData.append('bg_image', bgFile);
         if (profileFile) formData.append('profile_image', profileFile);
+        if (aboutMeImageFile) formData.append('about_me_image', aboutMeImageFile);
 
         const res = await fetch(API_URL + '?action=save_home', {
             method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData
@@ -1596,6 +1604,36 @@ function EditHomeView({ token, onLogout }) {
                     <label style={{display:'block', marginBottom:8, fontWeight:500, fontSize:14, color:'#a1a1aa'}}>Profile Image</label>
                     <input type="file" onChange={e=>setProfileFile(e.target.files[0])} accept="image/*" style={{width:'100%', padding:'10px', borderRadius:10, border:'1px solid #27272a', background:'#09090b', color:'#a1a1aa'}}/>
                 </div>
+                
+                <div style={{borderTop:'1px solid #27272a', paddingTop:30, marginTop:40, marginBottom:30}}>
+                    <h2 style={{fontSize:20, fontWeight:600, margin:'0 0 5px 0', color:'#fff'}}>About Me Section</h2>
+                    <p style={{margin:'0 0 25px 0', color:'#71717a', fontSize:14}}>Customize the About Me section displayed on your homepage.</p>
+                    
+                    <div style={{marginBottom:24}}>
+                        <label style={{display:'block', marginBottom:8, fontWeight:500, fontSize:14, color:'#a1a1aa'}}>Section Title</label>
+                        <input type="text" value={aboutMeTitle} onChange={e=>setAboutMeTitle(e.target.value)} placeholder="About Me" style={{width:'100%', padding:'12px 16px', borderRadius:10, border:'1px solid #27272a', boxSizing:'border-box', outline:'none', color:'#fff', background:'#09090b'}} onFocus={e=>e.currentTarget.style.borderColor='#10b981'} onBlur={e=>e.currentTarget.style.borderColor='#27272a'}/>
+                    </div>
+                    
+                    <div style={{marginBottom:24}}>
+                        <label style={{display:'block', marginBottom:8, fontWeight:500, fontSize:14, color:'#a1a1aa'}}>Content</label>
+                        <textarea 
+                            value={aboutMeContent} 
+                            onChange={e=>setAboutMeContent(e.target.value)} 
+                            placeholder="Write your about me content here... You can use basic HTML tags like <p>, <strong>, <em>, <a>, etc."
+                            style={{width:'100%', padding:'12px 16px', borderRadius:10, border:'1px solid #27272a', boxSizing:'border-box', minHeight:200, outline:'none', color:'#fff', background:'#09090b', fontFamily:'inherit', fontSize:14, lineHeight:1.6}} 
+                            onFocus={e=>e.currentTarget.style.borderColor='#10b981'} 
+                            onBlur={e=>e.currentTarget.style.borderColor='#27272a'}
+                        />
+                        <p style={{margin:'8px 0 0 0', fontSize:12, color:'#71717a'}}>Supports basic HTML tags for formatting</p>
+                    </div>
+                    
+                    <div style={{marginBottom:0}}>
+                        <label style={{display:'block', marginBottom:8, fontWeight:500, fontSize:14, color:'#a1a1aa'}}>About Me Image</label>
+                        <input type="file" onChange={e=>setAboutMeImageFile(e.target.files[0])} accept="image/*" style={{width:'100%', padding:'10px', borderRadius:10, border:'1px solid #27272a', background:'#09090b', color:'#a1a1aa'}}/>
+                        <p style={{margin:'8px 0 0 0', fontSize:12, color:'#71717a'}}>Recommended size: 800x800px or similar aspect ratio</p>
+                    </div>
+                </div>
+                
                 <button type="submit" style={{width:'100%', padding:'14px', background: '#fff', color:'#000', border:'none', borderRadius:12, cursor:'pointer', fontWeight:700, fontSize:16, transition:'0.2s', boxShadow: '0 10px 20px rgba(0,0,0,0.2)'}} onMouseOver={e=>e.currentTarget.style.background='#e4e4e7'} onMouseOut={e=>e.currentTarget.style.background='#fff'}>Update Homepage</button>
             </form>
         </div>
