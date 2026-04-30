@@ -126,10 +126,9 @@ export default function Home() {
             <div className="hero-section">
                 <iframe 
                     data-testid="embed-iframe" 
+                    className="spotify-embed"
                     style={{borderRadius:'12px', marginBottom:25}} 
                     src="https://open.spotify.com/embed/artist/78yrPwOcBEFSnaUPOycNmS?utm_source=generator" 
-                    width="40%" 
-                    height="352" 
                     frameBorder="0" 
                     allowfullscreen="" 
                     allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
@@ -214,6 +213,35 @@ export default function Home() {
 
             {/* Responsive Styles */}
             <style>{`
+                /* Spotify Embed Responsive */
+                .spotify-embed {
+                    width: 100%;
+                    max-width: 500px;
+                    height: 352px;
+                }
+                
+                @media (max-width: 768px) {
+                    .spotify-embed {
+                        width: 100%;
+                        max-width: 100%;
+                        height: 352px;
+                    }
+                }
+                
+                @media (max-width: 480px) {
+                    .spotify-embed {
+                        width: 100%;
+                        height: 352px;
+                    }
+                }
+                
+                @media (min-width: 769px) {
+                    .spotify-embed {
+                        width: 40%;
+                        max-width: 500px;
+                        height: 352px;
+                    }
+                }
                 /* Mobile: Show carousel, hide grid */
                 @media (max-width: 768px) {
                     .releases-carousel-mobile {
