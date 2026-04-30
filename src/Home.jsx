@@ -310,6 +310,37 @@ export default function Home() {
                 )}
             </div>
 
+            {/* About Me Section */}
+            {home.about_me_content && (
+                <div className="about-section">
+                    <div className="about-container">
+                        <div className="about-image-wrapper">
+                            {home.full_about_me_image_url ? (
+                                <img 
+                                    src={home.full_about_me_image_url} 
+                                    alt="About" 
+                                    className="about-image"
+                                />
+                            ) : (
+                                <div className="about-image-placeholder">
+                                    <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                        <circle cx="12" cy="7" r="4"/>
+                                    </svg>
+                                </div>
+                            )}
+                        </div>
+                        <div className="about-content">
+                            <h2 className="about-title">{home.about_me_title || 'About Me'}</h2>
+                            <div 
+                                className="about-text"
+                                dangerouslySetInnerHTML={{ __html: home.about_me_content }}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Responsive Styles */}
             <style>{`
                 /* Spotify Embed Responsive */
@@ -614,6 +645,188 @@ export default function Home() {
                     .view-toggle {
                         width: 100%;
                         justify-content: space-around;
+                    }
+                }
+                
+                /* About Me Section */
+                .about-section {
+                    padding: 80px 20px;
+                    margin: 40px auto;
+                    max-width: 1200px;
+                }
+                
+                .about-container {
+                    display: grid;
+                    grid-template-columns: 1fr 1.5fr;
+                    gap: 60px;
+                    align-items: center;
+                    background: rgba(255, 255, 255, 0.03);
+                    border: 1px solid rgba(255, 255, 255, 0.08);
+                    border-radius: 24px;
+                    padding: 50px;
+                    backdrop-filter: blur(10px);
+                    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                }
+                
+                .about-image-wrapper {
+                    position: relative;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                }
+                
+                .about-image {
+                    width: 100%;
+                    max-width: 400px;
+                    height: auto;
+                    border-radius: 20px;
+                    object-fit: cover;
+                    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+                    border: 3px solid rgba(255, 255, 255, 0.1);
+                    transition: transform 0.3s ease;
+                }
+                
+                .about-image:hover {
+                    transform: scale(1.02);
+                }
+                
+                .about-image-placeholder {
+                    width: 100%;
+                    max-width: 400px;
+                    aspect-ratio: 1;
+                    border-radius: 20px;
+                    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+                    border: 2px dashed rgba(255, 255, 255, 0.15);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    color: rgba(255, 255, 255, 0.3);
+                }
+                
+                .about-content {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 25px;
+                }
+                
+                .about-title {
+                    font-size: 42px;
+                    font-weight: 700;
+                    margin: 0;
+                    background: linear-gradient(135deg, #ffffff, rgba(255, 255, 255, 0.7));
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    background-clip: text;
+                    line-height: 1.2;
+                }
+                
+                .about-text {
+                    font-size: 16px;
+                    line-height: 1.8;
+                    color: rgba(255, 255, 255, 0.85);
+                }
+                
+                .about-text p {
+                    margin: 0 0 16px 0;
+                }
+                
+                .about-text p:last-child {
+                    margin-bottom: 0;
+                }
+                
+                .about-text strong,
+                .about-text b {
+                    color: #ffffff;
+                    font-weight: 600;
+                }
+                
+                .about-text a {
+                    color: #10b981;
+                    text-decoration: none;
+                    transition: color 0.2s;
+                }
+                
+                .about-text a:hover {
+                    color: #34d399;
+                    text-decoration: underline;
+                }
+                
+                /* About Me Section Responsive */
+                @media (max-width: 1024px) {
+                    .about-container {
+                        grid-template-columns: 1fr;
+                        gap: 40px;
+                        padding: 40px;
+                    }
+                    
+                    .about-image-wrapper {
+                        order: -1;
+                    }
+                    
+                    .about-image,
+                    .about-image-placeholder {
+                        max-width: 350px;
+                        margin: 0 auto;
+                    }
+                    
+                    .about-title {
+                        font-size: 36px;
+                        text-align: center;
+                    }
+                    
+                    .about-text {
+                        font-size: 15px;
+                    }
+                }
+                
+                @media (max-width: 768px) {
+                    .about-section {
+                        padding: 60px 15px;
+                        margin: 30px auto;
+                    }
+                    
+                    .about-container {
+                        padding: 30px;
+                        gap: 30px;
+                    }
+                    
+                    .about-title {
+                        font-size: 32px;
+                    }
+                    
+                    .about-text {
+                        font-size: 14px;
+                        line-height: 1.7;
+                    }
+                    
+                    .about-image,
+                    .about-image-placeholder {
+                        max-width: 300px;
+                    }
+                }
+                
+                @media (max-width: 480px) {
+                    .about-section {
+                        padding: 40px 10px;
+                        margin: 20px auto;
+                    }
+                    
+                    .about-container {
+                        padding: 25px 20px;
+                        border-radius: 16px;
+                    }
+                    
+                    .about-title {
+                        font-size: 28px;
+                    }
+                    
+                    .about-text {
+                        font-size: 14px;
+                    }
+                    
+                    .about-image,
+                    .about-image-placeholder {
+                        max-width: 100%;
                     }
                 }
             `}</style>
