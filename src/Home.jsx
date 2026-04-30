@@ -14,6 +14,7 @@ export default function Home() {
     const [releaseView, setReleaseView] = useState('grid'); // Default view: grid, list, carousel
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(10); // Number of releases per page
+    const [showCookieBanner, setShowCookieBanner] = useState(false);
 
     useEffect(() => {
         fetch(`${API_BASE_URL}/get_home.php`)
@@ -33,6 +34,15 @@ export default function Home() {
             s1.setAttribute('crossorigin', '*');
             s0.parentNode.insertBefore(s1, s0);
         })();
+
+        // Check for Cookie Consent
+        const cookieConsent = localStorage.getItem('cookie-consent');
+        if (!cookieConsent) {
+            // Slight delay to allow entrance animations to finish first
+            setTimeout(() => {
+                setShowCookieBanner(true);
+            }, 1000);
+        }
     }, []);
 
     const handleSubscribe = async (e) => {
@@ -85,6 +95,16 @@ export default function Home() {
         }
     };
 
+    const handleAcceptCookies = () => {
+        localStorage.setItem('cookie-consent', 'accepted');
+        setShowCookieBanner(false);
+    };
+
+    const handleDeclineCookies = () => {
+        localStorage.setItem('cookie-consent', 'declined');
+        setShowCookieBanner(false);
+    };
+
     if (!data) return <Preloader />;
 
     const { data: home, releases } = data;
@@ -109,7 +129,7 @@ export default function Home() {
     };
 
     return (
-        <div style={{minHeight:'100vh', fontFamily: "'Inter', sans-serif"}}>
+        <div style={{minHeight:'100vh', fontFamily: "'Inter', sans-serif", paddingBottom: showCookieBanner ? '80px' : '0', transition: 'padding 0.3s ease'}}>
             <Toaster 
                 position="top-center"
                 toastOptions={{
@@ -337,6 +357,19 @@ export default function Home() {
                                 dangerouslySetInnerHTML={{ __html: home.about_me_content }}
                             />
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Cookie Consent Banner */}
+            {showCookieBanner && (
+                <div className="cookie-banner">
+                    <div className="cookie-content">
+                        <p>We use cookies to improve your experience on our site. By continuing to use our site, you accept our use of cookies.</p>
+                    </div>
+                    <div className="cookie-actions">
+                        <button onClick={handleAcceptCookies} className="cookie-btn accept">Accept</button>
+                        <button onClick={handleDeclineCookies} className="cookie-btn decline">Decline</button>
                     </div>
                 </div>
             )}
@@ -583,6 +616,83 @@ export default function Home() {
                     border-color: rgba(255, 255, 255, 0.4);
                     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
                 }
+
+                /* Cookie Banner Styles */
+                .cookie-banner {
+                    position: fixed;
+                    bottom: 24px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    width: 90%;
+                    max-width: 700px;
+                    background: rgba(24, 24, 27, 0.95);
+                    backdrop-filter: blur(12px);
+                    border: 1px solid rgba(255, 255, 255, 0.15);
+                    border-radius: 16px;
+                    padding: 20px 24px;
+                    z-index: 99999;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 24px;
+                    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+                    animation: slideUpCookie 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                }
+
+                .cookie-content p {
+                    margin: 0;
+                    font-size: 14px;
+                    color: rgba(255, 255, 255, 0.85);
+                    line-height: 1.6;
+                }
+
+                .cookie-actions {
+                    display: flex;
+                    gap: 12px;
+                    flex-shrink: 0;
+                }
+
+                .cookie-btn {
+                    padding: 10px 20px;
+                    border-radius: 8px;
+                    font-size: 14px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    border: none;
+                }
+
+                .cookie-btn.accept {
+                    background: #10b981;
+                    color: white;
+                }
+
+                .cookie-btn.accept:hover {
+                    background: #059669;
+                    transform: translateY(-2px);
+                }
+
+                .cookie-btn.decline {
+                    background: transparent;
+                    color: rgba(255, 255, 255, 0.7);
+                    border: 1px solid rgba(255, 255, 255, 0.2);
+                }
+
+                .cookie-btn.decline:hover {
+                    background: rgba(255, 255, 255, 0.1);
+                    color: white;
+                }
+
+                @keyframes slideUpCookie {
+                    from {
+                        transform: translate(-50%, 150%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translate(-50%, 0);
+                        opacity: 1;
+                    }
+                }
                 
                 /* Mobile Responsive */
                 @media (max-width: 768px) {
@@ -632,6 +742,24 @@ export default function Home() {
                     .footer-grid {
                         grid-template-columns: 1fr !important;
                         gap: 30px !important;
+                    }
+
+                    .cookie-banner {
+                        flex-direction: column;
+                        text-align: center;
+                        padding: 20px;
+                        bottom: 16px;
+                        gap: 16px;
+                    }
+                    
+                    .cookie-actions {
+                        width: 100%;
+                        justify-content: stretch;
+                    }
+                    
+                    .cookie-btn {
+                        flex: 1;
+                        padding: 12px;
                     }
                 }
                 
