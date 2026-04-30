@@ -234,36 +234,127 @@ body, html {
 /* Homepage Improvements */
 .hero-section {
     text-align: center;
-    padding: 100px 20px 60px;
+    padding: 80px 20px 60px;
     position: relative;
     z-index: 10;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.hero-section::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.1) 0%, transparent 70%);
+    animation: heroGlow 8s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes heroGlow {
+    0%, 100% {
+        transform: translate(0, 0) scale(1);
+        opacity: 0.5;
+    }
+    50% {
+        transform: translate(10%, 10%) scale(1.1);
+        opacity: 0.8;
+    }
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+    max-width: 900px;
+    margin: 0 auto;
 }
 
 .hero-section h1 {
-    font-size: 32px;
-    font-weight: 800;
+    font-size: clamp(36px, 6vw, 56px);
+    font-weight: 900;
     text-transform: uppercase;
-    letter-spacing: 2px;
+    letter-spacing: 4px;
     margin: 0;
     color: #fff;
-    text-shadow: 0 3px 12px rgba(0,0,0,0.6);
+    text-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
+    animation: fadeInUp 0.8s ease-out;
+    background: linear-gradient(135deg, #ffffff 0%, #10b981 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.2;
 }
 
 .hero-section h2 {
-    font-size: 40px;
+    font-size: clamp(20px, 3vw, 32px);
     font-weight: 600;
-    margin: 12px 0 16px 0;
+    margin: 16px 0 24px 0;
     text-shadow: 0 3px 12px rgba(0,0,0,0.6);
-    color: #fff;
+    color: rgba(255, 255, 255, 0.95);
+    animation: fadeInUp 0.8s ease-out 0.2s both;
+    letter-spacing: 2px;
 }
 
 .hero-section p {
-    font-size: 16px;
+    font-size: clamp(14px, 2vw, 18px);
     color: rgba(255,255,255,0.85);
     max-width: 600px;
-    margin: 0 auto;
-    line-height: 1.6;
+    margin: 24px auto 0;
+    line-height: 1.8;
     text-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    animation: fadeInUp 0.8s ease-out 0.4s both;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes scrollDown {
+    0% {
+        opacity: 1;
+        top: 10px;
+    }
+    50% {
+        opacity: 0.5;
+        top: 25px;
+    }
+    100% {
+        opacity: 1;
+        top: 10px;
+    }
+}
+
+.hero-divider {
+    width: 80px;
+    height: 4px;
+    background: linear-gradient(90deg, transparent, #10b981, transparent);
+    margin: 24px auto;
+    border-radius: 2px;
+    animation: fadeInUp 0.8s ease-out 0.3s both;
+}
+
+.spotify-embed-wrapper {
+    animation: fadeInUp 0.8s ease-out 0.6s both;
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+    margin: 32px auto 0;
+}
+
+.spotify-embed-wrapper:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(16, 185, 129, 0.3);
 }
 
 .releases-section {
@@ -374,6 +465,52 @@ footer button {
 
 footer button:hover {
     background: rgba(255,255,255,0.3);
+}
+
+/* Hero Section Mobile Responsiveness */
+@media (max-width: 768px) {
+    .hero-section {
+        padding: 60px 20px 40px;
+        min-height: auto;
+    }
+    
+    .hero-section h1 {
+        letter-spacing: 2px;
+    }
+    
+    .hero-section h2 {
+        letter-spacing: 1px;
+    }
+    
+    .hero-divider {
+        width: 60px;
+        height: 3px;
+        margin: 20px auto;
+    }
+    
+    .spotify-embed-wrapper {
+        margin: 24px auto 0;
+    }
+    
+    .spotify-embed-wrapper:hover {
+        transform: none;
+        box-shadow: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-section {
+        padding: 50px 15px 30px;
+    }
+    
+    .hero-divider {
+        width: 50px;
+        margin: 16px auto;
+    }
+    
+    .spotify-embed-wrapper {
+        margin: 20px auto 0;
+    }
 }
 
 /* Admin Sidebar Improvements */
