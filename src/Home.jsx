@@ -124,19 +124,51 @@ export default function Home() {
             
             {/* Hero Section */}
             <div className="hero-section">
-                <h1>{home.artist_name}</h1>
-                <h2>{home.hero_title}</h2>
-                <iframe 
-                    data-testid="embed-iframe" 
-                    className="spotify-embed"
-                    style={{borderRadius:'12px', marginBottom:25}} 
-                    src="https://open.spotify.com/embed/artist/78yrPwOcBEFSnaUPOycNmS?utm_source=generator" 
-                    frameBorder="0" 
-                    allowfullscreen="" 
-                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
-                    loading="lazy"
-                ></iframe>
-                <p>{home.hero_subtitle}</p>
+                <div className="hero-content">
+                    <h1>{home.artist_name}</h1>
+                    <h2>{home.hero_title}</h2>
+                    <div className="hero-divider"></div>
+                    <div className="spotify-embed-wrapper">
+                        <iframe 
+                            data-testid="embed-iframe" 
+                            className="spotify-embed"
+                            style={{borderRadius:'12px'}} 
+                            src="https://open.spotify.com/embed/artist/78yrPwOcBEFSnaUPOycNmS?utm_source=generator" 
+                            frameBorder="0" 
+                            allowfullscreen="" 
+                            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+                            loading="lazy"
+                        ></iframe>
+                    </div>
+                    <p>{home.hero_subtitle}</p>
+                    
+                    {/* Scroll Indicator */}
+                    <div style={{
+                        marginTop: '60px',
+                        animation: 'fadeInUp 0.8s ease-out 0.8s both'
+                    }}>
+                        <div style={{
+                            width: '30px',
+                            height: '50px',
+                            border: '2px solid rgba(255,255,255,0.3)',
+                            borderRadius: '25px',
+                            margin: '0 auto',
+                            position: 'relative'
+                        }}>
+                            <div style={{
+                                width: '4px',
+                                height: '10px',
+                                background: '#10b981',
+                                borderRadius: '2px',
+                                position: 'absolute',
+                                left: '50%',
+                                top: '10px',
+                                transform: 'translateX(-50%)',
+                                animation: 'scrollDown 2s ease-in-out infinite'
+                            }}></div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {/* Releases Section - Responsive Grid/Carousel */}
