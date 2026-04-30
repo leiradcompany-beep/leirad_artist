@@ -266,6 +266,56 @@ body, html {
     text-shadow: 0 2px 6px rgba(0,0,0,0.4);
 }
 
+/* Spotify Embed Styling */
+.spotify-embed-wrapper {
+    margin: 25px auto;
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.spotify-embed-wrapper:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(16, 185, 129, 0.3);
+}
+
+.spotify-embed {
+    width: 100%;
+    max-width: 500px;
+    height: 352px;
+    display: block;
+}
+
+/* Spotify Embed Responsive */
+@media (max-width: 768px) {
+    .spotify-embed {
+        width: 100%;
+        max-width: 100%;
+        height: 352px;
+    }
+    
+    .spotify-embed-wrapper:hover {
+        transform: none;
+        box-shadow: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .spotify-embed {
+        width: 100%;
+        height: 352px;
+    }
+}
+
+@media (min-width: 769px) {
+    .spotify-embed {
+        width: 40%;
+        max-width: 500px;
+        height: 352px;
+    }
+}
+
 .releases-section {
     position: relative;
     z-index: 10;
