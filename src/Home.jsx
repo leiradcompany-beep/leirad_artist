@@ -13,7 +13,7 @@ export default function Home() {
     const [turnstileToken, setTurnstileToken] = useState('');
     const [releaseView, setReleaseView] = useState('grid'); // Default view: grid, list, carousel
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage] = useState(6); // Number of releases per page
+    const [itemsPerPage] = useState(10); // Number of releases per page
 
     useEffect(() => {
         fetch(`${API_BASE_URL}/get_home.php`)
