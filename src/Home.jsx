@@ -124,7 +124,18 @@ export default function Home() {
             
             {/* Hero Section */}
             <div className="hero-section">
-                {home.full_profile_url && <img src={home.full_profile_url} style={{width:160, height:160, borderRadius:'50%', objectFit:'cover', border:'4px solid rgba(255,255,255,0.2)', boxShadow:'0 20px 40px rgba(0,0,0,0.5)', marginBottom:25}} />}
+                <iframe 
+                    className="spotify-embed" 
+                    data-testid="embed-iframe" 
+                    style={{borderRadius:'12px'}} 
+                    src="https://open.spotify.com/embed/artist/78yrPwOcBEFSnaUPOycNmS?utm_source=generator" 
+                    width="100%" 
+                    height="352" 
+                    frameBorder="0" 
+                    allowfullscreen="" 
+                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+                    loading="lazy"
+                ></iframe>
                 <h1>{home.artist_name}</h1>
                 <h2>{home.hero_title}</h2>
                 <p>{home.hero_subtitle}</p>
@@ -204,6 +215,40 @@ export default function Home() {
 
             {/* Responsive Styles */}
             <style>{`
+                /* Spotify Embed Responsive */
+                .spotify-embed {
+                    width: 100%;
+                    max-width: 100%;
+                    height: 352px;
+                }
+                
+                /* Mobile devices (≤480px) */
+                @media (max-width: 480px) {
+                    .spotify-embed {
+                        width: 100% !important;
+                        max-width: 100% !important;
+                        height: 352px !important;
+                    }
+                }
+                
+                /* Tablet devices (481px-768px) */
+                @media (min-width: 481px) and (max-width: 768px) {
+                    .spotify-embed {
+                        width: 100% !important;
+                        max-width: 100% !important;
+                        height: 352px !important;
+                    }
+                }
+                
+                /* Desktop devices (≥769px) */
+                @media (min-width: 769px) {
+                    .spotify-embed {
+                        width: 40% !important;
+                        max-width: 500px !important;
+                        height: 352px !important;
+                    }
+                }
+                
                 /* Mobile: Show carousel, hide grid */
                 @media (max-width: 768px) {
                     .releases-carousel-mobile {
