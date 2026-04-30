@@ -14,6 +14,7 @@ export default function Home() {
     const [releaseView, setReleaseView] = useState('grid'); // Default view: grid, list, carousel
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(10); // Number of releases per page
+    const [cookieConsentReady, setCookieConsentReady] = useState(false);
 
     useEffect(() => {
         fetch(`${API_BASE_URL}/get_home.php`)
@@ -33,7 +34,90 @@ export default function Home() {
             s1.setAttribute('crossorigin', '*');
             s0.parentNode.insertBefore(s1, s0);
         })();
+
+        // Load CookieConsent CSS
+        const cssLink = document.createElement('link');
+        cssLink.rel = 'stylesheet';
+        cssLink.href = 'https://cdn.jsdelivr.net/npm/cookieconsent@3/dist/cookieconsent.css';
+        document.head.appendChild(cssLink);
+
+        // Load CookieConsent JS
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/cookieconsent@3/dist/cookieconsent.umd.js';
+        script.async = true;
+        
+        script.onload = () => {
+            // Initialize CookieConsent once the script is loaded
+            if (window.CookieConsent) {
+                window.CookieConsent.run({
+                    guiOptions: {
+                        consentModal: {
+                            layout: "box",
+                            position: "bottom right"
+                        }
+                    },
+                    categories: {
+                        necessary: {
+                            readOnly: true
+                        },
+                        analytics: {}
+                    },
+                    language: {
+                        default: "en",
+                        translations: {
+                            en: {
+                                consentModal: {
+                                    title: "We use cookies",
+                                    description: "This website uses cookies to improve your experience.",
+                                    acceptAllBtn: "Accept all",
+                                    acceptNecessaryBtn: "Reject all"
+                                }
+                            }
+                        }
+                    }
+                });
+                
+                setCookieConsentReady(true);
+            }
+        };
+        
+        script.onerror = () => {
+            console.error('Failed to load CookieConsent script');
+        };
+        
+        document.head.appendChild(script);
+
+        // Cleanup function
+        return () => {
+            // Remove CookieConsent elements when component unmounts
+            if (cssLink.parentNode) {
+                cssLink.parentNode.removeChild(cssLink);
+            }
+            if (script.parentNode) {
+                script.parentNode.removeChild(script);
+            }
+            // Remove any CookieConsent DOM elements
+            const cookieConsentElements = document.querySelectorAll('[id*="cc-"], #cookieconsent\\:');
+            cookieConsentElements.forEach(el => el.remove());
+        };
     }, []);
+
+    // Add analytics script that respects cookie consent
+    useEffect(() => {
+        if (cookieConsentReady) {
+            const analyticsScript = document.createElement('script');
+            analyticsScript.type = 'text/plain';
+            analyticsScript.setAttribute('data-category', 'analytics');
+            analyticsScript.textContent = 'console.log("Analytics loaded only after consent");';
+            document.head.appendChild(analyticsScript);
+
+            return () => {
+                if (analyticsScript.parentNode) {
+                    analyticsScript.parentNode.removeChild(analyticsScript);
+                }
+            };
+        }
+    }, [cookieConsentReady]);
 
     const handleSubscribe = async (e) => {
         e.preventDefault();
