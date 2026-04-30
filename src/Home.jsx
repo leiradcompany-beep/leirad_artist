@@ -12,6 +12,8 @@ export default function Home() {
     const [subscribed, setSubscribed] = useState(false);
     const [turnstileToken, setTurnstileToken] = useState('');
     const [releaseView, setReleaseView] = useState('grid'); // Default view: grid, list, carousel
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage] = useState(6); // Number of releases per page
 
     useEffect(() => {
         fetch(`${API_BASE_URL}/get_home.php`)
@@ -87,6 +89,25 @@ export default function Home() {
 
     const { data: home, releases } = data;
 
+    // Calculate pagination
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentReleases = releases ? releases.slice(indexOfFirstItem, indexOfLastItem) : [];
+    const totalPages = releases ? Math.ceil(releases.length / itemsPerPage) : 0;
+
+    // Reset to page 1 when view changes
+    const handleViewChange = (view) => {
+        setReleaseView(view);
+        setCurrentPage(1);
+    };
+
+    // Pagination controls
+    const paginate = (pageNumber) => {
+        setCurrentPage(pageNumber);
+        // Scroll to top of releases section
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
     return (
         <div style={{minHeight:'100vh', fontFamily: "'Inter', sans-serif"}}>
             <Toaster 
@@ -150,21 +171,21 @@ export default function Home() {
                     <div className="view-toggle">
                         <button 
                             className={`view-btn ${releaseView === 'grid' ? 'active' : ''}`}
-                            onClick={() => setReleaseView('grid')}
+                            onClick={() => handleViewChange('grid')}
                             title="Grid View"
                         >
                             <FaTh />
                         </button>
                         <button 
                             className={`view-btn ${releaseView === 'list' ? 'active' : ''}`}
-                            onClick={() => setReleaseView('list')}
+                            onClick={() => handleViewChange('list')}
                             title="List View"
                         >
                             <FaList />
                         </button>
                         <button 
                             className={`view-btn ${releaseView === 'carousel' ? 'active' : ''}`}
-                            onClick={() => setReleaseView('carousel')}
+                            onClick={() => handleViewChange('carousel')}
                             title="Carousel View"
                         >
                             <FaThLarge />
@@ -174,7 +195,7 @@ export default function Home() {
 
                 {/* Grid View */}
                 <div className={`releases-container ${releaseView === 'grid' ? 'view-grid' : ''}`}>
-                    {releases && releases.map(r => (
+                    {currentReleases && currentReleases.map(r => (
                         <a 
                             key={r.id} 
                             href={`/?s=${r.shortcode}`} 
@@ -198,7 +219,7 @@ export default function Home() {
 
                 {/* List View */}
                 <div className={`releases-container ${releaseView === 'list' ? 'view-list' : ''}`}>
-                    {releases && releases.map(r => (
+                    {currentReleases && currentReleases.map(r => (
                         <a 
                             key={r.id} 
                             href={`/?s=${r.shortcode}`} 
@@ -225,7 +246,7 @@ export default function Home() {
                 {/* Carousel View */}
                 <div className={`releases-container ${releaseView === 'carousel' ? 'view-carousel' : ''}`}>
                     <div className="carousel-wrapper">
-                        {releases && releases.map(r => (
+                        {currentReleases && currentReleases.map(r => (
                             <a 
                                 key={r.id} 
                                 href={`/?s=${r.shortcode}`} 
@@ -254,6 +275,39 @@ export default function Home() {
                     </div>
                     <p className="carousel-hint">← Swipe to see more →</p>
                 </div>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                    <div className="pagination-container">
+                        <button 
+                            className="pagination-btn"
+                            onClick={() => paginate(currentPage - 1)}
+                            disabled={currentPage === 1}
+                        >
+                            ← Previous
+                        </button>
+                        
+                        <div className="pagination-numbers">
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map(number => (
+                                <button
+                                    key={number}
+                                    className={`pagination-number ${currentPage === number ? 'active' : ''}`}
+                                    onClick={() => paginate(number)}
+                                >
+                                    {number}
+                                </button>
+                            ))}
+                        </div>
+                        
+                        <button 
+                            className="pagination-btn"
+                            onClick={() => paginate(currentPage + 1)}
+                            disabled={currentPage === totalPages}
+                        >
+                            Next →
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Responsive Styles */}
@@ -401,12 +455,13 @@ export default function Home() {
                     margin: 0 0 5px 0;
                     font-size: 16px;
                     font-weight: 600;
+                    color: #fff !important;
                 }
                 
                 .release-card-list p {
                     margin: 0;
                     font-size: 14px;
-                    color: rgba(255, 255, 255, 0.7);
+                    color: rgba(255, 255, 255, 0.7) !important;
                 }
                 
                 /* Carousel View */
@@ -431,6 +486,71 @@ export default function Home() {
                     color: rgba(255, 255, 255, 0.5);
                     text-align: center;
                     margin: 10px 0 0 0;
+                }
+                
+                /* Pagination Styles */
+                .pagination-container {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    gap: 15px;
+                    margin-top: 40px;
+                    padding: 20px 0;
+                }
+                
+                .pagination-btn {
+                    padding: 10px 20px;
+                    background: rgba(255, 255, 255, 0.1);
+                    border: 1px solid rgba(255, 255, 255, 0.2);
+                    color: rgba(255, 255, 255, 0.8);
+                    border-radius: 8px;
+                    cursor: pointer;
+                    transition: all 0.3s;
+                    font-size: 14px;
+                    font-weight: 500;
+                }
+                
+                .pagination-btn:hover:not(:disabled) {
+                    background: rgba(255, 255, 255, 0.2);
+                    color: #fff;
+                    transform: translateY(-2px);
+                }
+                
+                .pagination-btn:disabled {
+                    opacity: 0.4;
+                    cursor: not-allowed;
+                }
+                
+                .pagination-numbers {
+                    display: flex;
+                    gap: 8px;
+                }
+                
+                .pagination-number {
+                    min-width: 40px;
+                    height: 40px;
+                    padding: 0 12px;
+                    background: rgba(255, 255, 255, 0.08);
+                    border: 1px solid rgba(255, 255, 255, 0.15);
+                    color: rgba(255, 255, 255, 0.7);
+                    border-radius: 8px;
+                    cursor: pointer;
+                    transition: all 0.3s;
+                    font-size: 14px;
+                    font-weight: 500;
+                }
+                
+                .pagination-number:hover {
+                    background: rgba(255, 255, 255, 0.15);
+                    color: #fff;
+                    transform: translateY(-2px);
+                }
+                
+                .pagination-number.active {
+                    background: rgba(255, 255, 255, 0.25);
+                    color: #fff;
+                    border-color: rgba(255, 255, 255, 0.4);
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
                 }
                 
                 /* Mobile Responsive */
@@ -460,6 +580,22 @@ export default function Home() {
                     
                     .release-card-list p {
                         font-size: 12px;
+                    }
+                    
+                    .pagination-container {
+                        flex-wrap: wrap;
+                        gap: 10px;
+                    }
+                    
+                    .pagination-btn {
+                        padding: 8px 16px;
+                        font-size: 13px;
+                    }
+                    
+                    .pagination-number {
+                        min-width: 36px;
+                        height: 36px;
+                        font-size: 13px;
                     }
                     
                     .footer-grid {
