@@ -14,7 +14,6 @@ export default function Home() {
     const [releaseView, setReleaseView] = useState('grid'); // Default view: grid, list, carousel
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(10); // Number of releases per page
-    const [cookieConsent, setCookieConsent] = useState(null); // Track consent state
 
     useEffect(() => {
         fetch(`${API_BASE_URL}/get_home.php`)
@@ -34,161 +33,6 @@ export default function Home() {
             s1.setAttribute('crossorigin', '*');
             s0.parentNode.insertBefore(s1, s0);
         })();
-
-        // ===================== COOKIE CONSENT INTEGRATION =====================
-        
-        // 1. Define Google Consent Mode defaults (no consent by default)
-        window.dataLayer = window.dataLayer || [];
-        function gtag() { window.dataLayer.push(arguments); }
-        
-        // Set default consent to denied for all categories
-        gtag('consent', 'default', {
-            'ad_storage': 'denied',
-            'ad_user_data': 'denied',
-            'ad_personalization': 'denied',
-            'analytics_storage': 'denied',
-            'functionality_storage': 'denied',
-            'personalization_storage': 'denied',
-            'security_storage': 'granted', // Essential for security
-            'wait_for_update': 500, // Wait for user interaction
-        });
-
-        // 2. Load consent-banner-js stylesheet
-        const consentCSS = document.createElement('link');
-        consentCSS.rel = 'stylesheet';
-        consentCSS.href = 'https://cdn.jsdelivr.net/npm/consent-banner-js@2.0.0/dist/styles/light.min.css';
-        document.head.appendChild(consentCSS);
-
-        // 3. Load consent-banner-js script
-        const consentScript = document.createElement('script');
-        consentScript.src = 'https://cdn.jsdelivr.net/npm/consent-banner-js@2.0.0/dist/cb.min.js';
-        consentScript.defer = true;
-        consentScript.onload = initializeConsentBanner;
-        document.body.appendChild(consentScript);
-
-        // 4. Cookie helper functions
-        function setCookie(name, value, days) {
-            let expires = '';
-            if (days) {
-                const date = new Date();
-                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-                expires = '; expires=' + date.toUTCString();
-            }
-            document.cookie = name + '=' + (value || '') + expires + '; path=/; SameSite=Lax';
-        }
-
-        function getCookie(name) {
-            const nameEQ = name + '=';
-            const ca = document.cookie.split(';');
-            for (let i = 0; i < ca.length; i++) {
-                let c = ca[i];
-                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-            }
-            return null;
-        }
-
-        // 5. Initialize the consent banner
-        function initializeConsentBanner() {
-            // Load saved consent state from cookie
-            const savedConsent = getCookie('cookie_consent');
-            let initialConsent = null;
-            
-            if (savedConsent) {
-                try {
-                    initialConsent = JSON.parse(savedConsent);
-                    // Update Google Consent Mode with saved preferences
-                    gtag('consent', 'update', {
-                        'ad_storage': initialConsent.ad_storage || 'denied',
-                        'ad_user_data': initialConsent.ad_user_data || 'denied',
-                        'ad_personalization': initialConsent.ad_personalization || 'denied',
-                        'analytics_storage': initialConsent.analytics_storage || 'denied',
-                        'functionality_storage': initialConsent.functionality_storage || 'denied',
-                        'personalization_storage': initialConsent.personalization_storage || 'denied',
-                    });
-                } catch (e) {
-                    console.error('Error parsing saved consent:', e);
-                }
-            }
-
-            window.addEventListener('consent-banner.ready', () => {
-                window.cookiesBannerJs(
-                    // Load consent state
-                    function() {
-                        if (savedConsent) {
-                            try {
-                                return JSON.parse(savedConsent);
-                            } catch (e) {
-                                return null;
-                            }
-                        }
-                        return null;
-                    },
-                    // Save consent state
-                    function(consentState) {
-                        // Save to cookie for 365 days
-                        setCookie('cookie_consent', JSON.stringify(consentState), 365);
-                        
-                        // Update Google Consent Mode
-                        gtag('consent', 'update', {
-                            'ad_storage': consentState.ad_storage || 'denied',
-                            'ad_user_data': consentState.ad_user_data || 'denied',
-                            'ad_personalization': consentState.ad_personalization || 'denied',
-                            'analytics_storage': consentState.analytics_storage || 'denied',
-                            'functionality_storage': consentState.functionality_storage || 'denied',
-                            'personalization_storage': consentState.personalization_storage || 'denied',
-                        });
-                        
-                        // Update React state
-                        setCookieConsent(consentState);
-                        
-                        console.log('Cookie consent updated:', consentState);
-                    },
-                    // Configuration
-                    {
-                        privacyPolicy: '/privacy', // Link to your privacy policy
-                        denyButtonText: 'Deny All',
-                        acceptButtonText: 'Accept All',
-                        customiseButtonText: 'Customize',
-                        headerText: 'We value your privacy',
-                        messageText: 'This website uses cookies to enhance your browsing experience, serve personalized ads or content, and analyze our traffic. By clicking "Accept All", you consent to our use of cookies.',
-                        showCustomizeButton: true,
-                        categories: {
-                            analytics: {
-                                title: 'Analytics Cookies',
-                                description: 'These cookies help us understand how visitors interact with our website by collecting and reporting information anonymously.',
-                                default: false,
-                            },
-                            advertisement: {
-                                title: 'Advertisement Cookies',
-                                description: 'These cookies are used to deliver advertisements more relevant to you and your interests.',
-                                default: false,
-                            },
-                            functional: {
-                                title: 'Functional Cookies',
-                                description: 'These cookies enable the website to provide enhanced functionality and personalization.',
-                                default: false,
-                            },
-                            necessary: {
-                                title: 'Necessary Cookies',
-                                description: 'These cookies are essential for the website to function properly and cannot be switched off.',
-                                default: true,
-                                readOnly: true, // Cannot be disabled
-                            },
-                        },
-                    }
-                );
-            });
-        }
-
-        // Cleanup function (optional, but good practice)
-        return () => {
-            // Clean up consent banner if component unmounts
-            const banner = document.getElementById('consent-banner');
-            if (banner) {
-                banner.remove();
-            }
-        };
     }, []);
 
     const handleSubscribe = async (e) => {
@@ -217,9 +61,9 @@ export default function Home() {
                     })
                 });
 
-                const responseData = await response.json();
+                const data = await response.json();
 
-                if (responseData.success) {
+                if (data.success) {
                     toast.success('Welcome! Check your email for a greeting message.', {
                         id: loadingToast,
                         duration: 5000
@@ -228,7 +72,7 @@ export default function Home() {
                     setEmail('');
                     setTimeout(() => setSubscribed(false), 5000);
                 } else {
-                    toast.error(responseData.error || 'Subscription failed. Please try again.', {
+                    toast.error(data.error || 'Subscription failed. Please try again.', {
                         id: loadingToast
                     });
                 }
@@ -495,40 +339,6 @@ export default function Home() {
                         </div>
                     </div>
                 </div>
-            )}
-
-            {/* Consent Management Button (allows users to reopen consent dialog) */}
-            {cookieConsent && (
-                <button
-                    onClick={() => {
-                        // Trigger the consent banner to show again
-                        const event = new CustomEvent('consent-banner.show');
-                        window.dispatchEvent(event);
-                    }}
-                    style={{
-                        position: 'fixed',
-                        bottom: '20px',
-                        left: '20px',
-                        padding: '10px 15px',
-                        background: 'rgba(255, 255, 255, 0.1)',
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
-                        borderRadius: '8px',
-                        color: '#fff',
-                        cursor: 'pointer',
-                        fontSize: '13px',
-                        zIndex: 1000,
-                        backdropFilter: 'blur(10px)',
-                        transition: 'all 0.3s',
-                    }}
-                    onMouseOver={(e) => {
-                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
-                    }}
-                    onMouseOut={(e) => {
-                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                    }}
-                >
-                    🍪 Cookie Settings
-                </button>
             )}
 
             {/* Responsive Styles */}
@@ -1174,20 +984,6 @@ export default function Home() {
                                     e.currentTarget.style.paddingLeft = '0';
                                 }}
                             >TikTok</a>
-                            <a href="/privacy" style={{
-                                textDecoration: 'none',
-                                fontSize: 14,
-                                transition: '0.2s',
-                                padding: '4px 0'
-                            }}
-                                onMouseOver={e => {
-                                    e.currentTarget.style.color = '#fff';
-                                    e.currentTarget.style.paddingLeft = '8px';
-                                }}
-                                onMouseOut={e => {
-                                    e.currentTarget.style.paddingLeft = '0';
-                                }}
-                            >Privacy Policy</a>
                         </div>
                     </div>
 
