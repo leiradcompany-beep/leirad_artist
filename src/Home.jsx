@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import Preloader from './Preloader.jsx';
-import { FaFacebook, FaTiktok, FaInstagram, FaSpotify } from 'react-icons/fa';
+import { FaFacebook, FaTiktok, FaInstagram, FaSpotify, FaTh, FaList, FaThLarge } from 'react-icons/fa';
 import toast, { Toaster } from 'react-hot-toast';
 import { Turnstile } from '@marsidev/react-turnstile';
 
@@ -11,6 +11,7 @@ export default function Home() {
     const [email, setEmail] = useState('');
     const [subscribed, setSubscribed] = useState(false);
     const [turnstileToken, setTurnstileToken] = useState('');
+    const [releaseView, setReleaseView] = useState('grid'); // Default view: grid, list, carousel
 
     useEffect(() => {
         fetch(`${API_BASE_URL}/get_home.php`)
@@ -141,15 +142,89 @@ export default function Home() {
                 <p>{home.hero_subtitle}</p>
             </div>
 
-            {/* Releases Section - Responsive Grid/Carousel */}
+            {/* Releases Section - User Selectable View */}
             <div className="releases-section">
-                {/* Section Title - Desktop */}
-                <h2 className="releases-title-desktop">Latest Releases</h2>
+                {/* Section Header with View Toggle */}
+                <div className="releases-header">
+                    <h2 className="releases-title">Latest Releases</h2>
+                    <div className="view-toggle">
+                        <button 
+                            className={`view-btn ${releaseView === 'grid' ? 'active' : ''}`}
+                            onClick={() => setReleaseView('grid')}
+                            title="Grid View"
+                        >
+                            <FaTh />
+                        </button>
+                        <button 
+                            className={`view-btn ${releaseView === 'list' ? 'active' : ''}`}
+                            onClick={() => setReleaseView('list')}
+                            title="List View"
+                        >
+                            <FaList />
+                        </button>
+                        <button 
+                            className={`view-btn ${releaseView === 'carousel' ? 'active' : ''}`}
+                            onClick={() => setReleaseView('carousel')}
+                            title="Carousel View"
+                        >
+                            <FaThLarge />
+                        </button>
+                    </div>
+                </div>
 
-                {/* Mobile Carousel Container */}
-                <div className="releases-carousel-mobile">
-                    <h2>Latest Releases</h2>
-                    <div>
+                {/* Grid View */}
+                <div className={`releases-container ${releaseView === 'grid' ? 'view-grid' : ''}`}>
+                    {releases && releases.map(r => (
+                        <a 
+                            key={r.id} 
+                            href={`/?s=${r.shortcode}`} 
+                            className="release-card"
+                        >
+                            <img 
+                                src={r.full_cover_url}
+                                alt={r.title}
+                            />
+                            <h3>{r.title}</h3>
+                            <p>{r.artist}</p>
+                            {r.stream_count && (
+                                <p style={{ fontSize: 12, color: '#10b981', marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                                    <FaSpotify size={12} />
+                                    {r.stream_count} Streams
+                                </p>
+                            )}
+                        </a>
+                    ))}
+                </div>
+
+                {/* List View */}
+                <div className={`releases-container ${releaseView === 'list' ? 'view-list' : ''}`}>
+                    {releases && releases.map(r => (
+                        <a 
+                            key={r.id} 
+                            href={`/?s=${r.shortcode}`} 
+                            className="release-card-list"
+                        >
+                            <img 
+                                src={r.full_cover_url}
+                                alt={r.title}
+                            />
+                            <div className="release-info">
+                                <h3>{r.title}</h3>
+                                <p>{r.artist}</p>
+                                {r.stream_count && (
+                                    <p style={{ fontSize: 12, color: '#10b981', marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                                        <FaSpotify size={12} />
+                                        {r.stream_count} Streams
+                                    </p>
+                                )}
+                            </div>
+                        </a>
+                    ))}
+                </div>
+
+                {/* Carousel View */}
+                <div className={`releases-container ${releaseView === 'carousel' ? 'view-carousel' : ''}`}>
+                    <div className="carousel-wrapper">
                         {releases && releases.map(r => (
                             <a 
                                 key={r.id} 
@@ -177,39 +252,7 @@ export default function Home() {
                             </a>
                         ))}
                     </div>
-                    {/* Scroll indicator for mobile */}
-                    <p style={{
-                        fontSize: 12,
-                        color: 'rgba(255,255,255,0.5)',
-                        textAlign: 'center',
-                        margin: '10px 0 0 0'
-                    }}>← Swipe to see more →</p>
-                </div>
-
-                {/* Desktop Grid Container */}
-                <div className="releases-grid-desktop">
-                    <div>
-                        {releases && releases.map(r => (
-                            <a 
-                                key={r.id} 
-                                href={`/?s=${r.shortcode}`} 
-                                className="release-card"
-                            >
-                                <img 
-                                    src={r.full_cover_url}
-                                    alt={r.title}
-                                />
-                                <h3>{r.title}</h3>
-                                <p>{r.artist}</p>
-                                {r.stream_count && (
-                                    <p style={{ fontSize: 12, color: '#10b981', marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                                        <FaSpotify size={12} />
-                                        {r.stream_count} Streams
-                                    </p>
-                                )}
-                            </a>
-                        ))}
-                    </div>
+                    <p className="carousel-hint">← Swipe to see more →</p>
                 </div>
             </div>
 
@@ -249,75 +292,192 @@ export default function Home() {
                     }
                 }
                 
-                /* Mobile: Show carousel, hide grid */
+                /* Releases Section Header */
+                .releases-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 20px;
+                    flex-wrap: wrap;
+                    gap: 15px;
+                }
+                
+                .releases-title {
+                    margin: 0;
+                    font-size: 28px;
+                    font-weight: 700;
+                }
+                
+                /* View Toggle Buttons */
+                .view-toggle {
+                    display: flex;
+                    gap: 8px;
+                    background: rgba(255, 255, 255, 0.08);
+                    padding: 6px;
+                    border-radius: 10px;
+                }
+                
+                .view-btn {
+                    width: 40px;
+                    height: 40px;
+                    border: none;
+                    background: transparent;
+                    color: rgba(255, 255, 255, 0.6);
+                    border-radius: 8px;
+                    cursor: pointer;
+                    transition: all 0.3s;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 18px;
+                }
+                
+                .view-btn:hover {
+                    background: rgba(255, 255, 255, 0.15);
+                    color: rgba(255, 255, 255, 0.9);
+                }
+                
+                .view-btn.active {
+                    background: rgba(255, 255, 255, 0.25);
+                    color: #fff;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                }
+                
+                /* Releases Container */
+                .releases-container {
+                    display: none;
+                }
+                
+                .releases-container.view-grid,
+                .releases-container.view-list,
+                .releases-container.view-carousel {
+                    display: block;
+                }
+                
+                /* Grid View */
+                .releases-container.view-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                    gap: 20px;
+                }
+                
+                /* List View */
+                .releases-container.view-list {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 15px;
+                }
+                
+                .release-card-list {
+                    display: flex;
+                    align-items: center;
+                    gap: 20px;
+                    background: rgba(255, 255, 255, 0.05);
+                    padding: 15px;
+                    border-radius: 12px;
+                    text-decoration: none;
+                    color: inherit;
+                    transition: all 0.3s;
+                }
+                
+                .release-card-list:hover {
+                    background: rgba(255, 255, 255, 0.1);
+                    transform: translateX(5px);
+                }
+                
+                .release-card-list img {
+                    width: 80px;
+                    height: 80px;
+                    border-radius: 8px;
+                    object-fit: cover;
+                    flex-shrink: 0;
+                }
+                
+                .release-card-list .release-info {
+                    flex: 1;
+                }
+                
+                .release-card-list h3 {
+                    margin: 0 0 5px 0;
+                    font-size: 16px;
+                    font-weight: 600;
+                }
+                
+                .release-card-list p {
+                    margin: 0;
+                    font-size: 14px;
+                    color: rgba(255, 255, 255, 0.7);
+                }
+                
+                /* Carousel View */
+                .releases-container.view-carousel .carousel-wrapper {
+                    display: flex;
+                    gap: 15px;
+                    overflow-x: auto;
+                    scroll-snap-type: x mandatory;
+                    -webkit-overflow-scrolling: touch;
+                    padding-bottom: 20px;
+                    margin-bottom: 10px;
+                    scrollbar-width: none;
+                    -ms-overflow-style: none;
+                }
+                
+                .releases-container.view-carousel .carousel-wrapper::-webkit-scrollbar {
+                    display: none;
+                }
+                
+                .carousel-hint {
+                    font-size: 12px;
+                    color: rgba(255, 255, 255, 0.5);
+                    text-align: center;
+                    margin: 10px 0 0 0;
+                }
+                
+                /* Mobile Responsive */
                 @media (max-width: 768px) {
-                    .releases-carousel-mobile {
-                        display: block !important;
+                    .releases-header {
+                        flex-direction: column;
+                        align-items: flex-start;
                     }
-                    .releases-carousel-mobile div {
-                        display: flex;
+                    
+                    .releases-title {
+                        font-size: 24px;
+                    }
+                    
+                    .releases-container.view-grid {
+                        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
                         gap: 15px;
-                        overflow-x: auto;
-                        scroll-snap-type: x mandatory;
-                        -webkit-overflow-scrolling: touch;
-                        padding-bottom: 20px;
-                        margin-bottom: 10px;
-                        scrollbar-width: none;
-                        -ms-overflow-style: none;
                     }
-                    .releases-carousel-mobile div::-webkit-scrollbar {
-                        display: none;
+                    
+                    .release-card-list img {
+                        width: 70px;
+                        height: 70px;
                     }
-                    .releases-grid-desktop {
-                        display: none !important;
+                    
+                    .release-card-list h3 {
+                        font-size: 14px;
                     }
-                    .releases-title-desktop {
-                        display: none !important;
+                    
+                    .release-card-list p {
+                        font-size: 12px;
                     }
-                    /* Footer mobile optimization */
+                    
                     .footer-grid {
                         grid-template-columns: 1fr !important;
                         gap: 30px !important;
                     }
                 }
                 
-                /* Desktop: Show grid, hide carousel */
-                @media (min-width: 769px) {
-                    .releases-carousel-mobile {
-                        display: none !important;
-                    }
-                    .releases-grid-desktop {
-                        display: block !important;
-                    }
-                    .releases-grid-desktop div {
-                        display: grid;
-                        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-                        gap: 20px;
-                    }
-                    .releases-title-desktop {
-                        display: block !important;
-                    }
-                }
-                
-                /* Tablet optimizations */
-                @media (min-width: 769px) and (max-width: 1024px) {
-                    .releases-grid-desktop div {
-                        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important;
-                    }
-                }
-                
                 /* Small mobile devices */
                 @media (max-width: 480px) {
-                    .releases-carousel-mobile a {
-                        min-width: 140px !important;
-                        maxWidth: 140px !important;
-                        padding: 10px !important;
+                    .releases-container.view-grid {
+                        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+                        gap: 12px;
                     }
-                    .releases-carousel-mobile h3 {
-                        font-size: 13px !important;
-                    }
-                    .releases-carousel-mobile p {
-                        font-size: 11px !important;
+                    
+                    .view-toggle {
+                        width: 100%;
+                        justify-content: space-around;
                     }
                 }
             `}</style>
