@@ -14,19 +14,18 @@ export default function Home() {
     const [releaseView, setReleaseView] = useState('grid'); // Default view: grid, list, carousel
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(10); // Number of releases per page
-    const [showCookieBanner, setShowCookieBanner] = useState(false);
 
     useEffect(() => {
         fetch(`${API_BASE_URL}/get_home.php`)
             .then(res => res.json())
             .then(res => {
-                if(res.success) setData(res);
+                if (res.success) setData(res);
             })
-            .catch(() => {});
+            .catch(() => { });
 
         // Load Tawk.to Chat Widget
         var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
-        (function() {
+        (function () {
             var s1 = document.createElement("script"), s0 = document.getElementsByTagName("script")[0];
             s1.async = true;
             s1.src = 'https://embed.tawk.to/69f18b77db9e841c36b065d3/1jnbohiu5';
@@ -34,15 +33,6 @@ export default function Home() {
             s1.setAttribute('crossorigin', '*');
             s0.parentNode.insertBefore(s1, s0);
         })();
-
-        // Check for Cookie Consent
-        const cookieConsent = localStorage.getItem('cookie-consent');
-        if (!cookieConsent) {
-            // Slight delay to allow entrance animations to finish first
-            setTimeout(() => {
-                setShowCookieBanner(true);
-            }, 1000);
-        }
     }, []);
 
     const handleSubscribe = async (e) => {
@@ -54,25 +44,25 @@ export default function Home() {
             }
 
             const loadingToast = toast.loading('Subscribing...');
-            
+
             try {
                 // Encode email to prevent casual viewing in Network tab
                 // Note: This is obfuscation, not encryption. HTTPS provides actual transit security.
                 const encodedEmail = btoa(encodeURIComponent(email));
-                
+
                 const response = await fetch(`${API_BASE_URL}/subscribe.php`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ 
+                    body: JSON.stringify({
                         email_encoded: encodedEmail,
-                        turnstile_token: turnstileToken 
+                        turnstile_token: turnstileToken
                     })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     toast.success('Welcome! Check your email for a greeting message.', {
                         id: loadingToast,
@@ -93,16 +83,6 @@ export default function Home() {
                 });
             }
         }
-    };
-
-    const handleAcceptCookies = () => {
-        localStorage.setItem('cookie-consent', 'accepted');
-        setShowCookieBanner(false);
-    };
-
-    const handleDeclineCookies = () => {
-        localStorage.setItem('cookie-consent', 'declined');
-        setShowCookieBanner(false);
     };
 
     if (!data) return <Preloader />;
@@ -129,8 +109,8 @@ export default function Home() {
     };
 
     return (
-        <div style={{minHeight:'100vh', fontFamily: "'Inter', sans-serif", paddingBottom: showCookieBanner ? '80px' : '0', transition: 'padding 0.3s ease'}}>
-            <Toaster 
+        <div style={{ minHeight: '100vh', fontFamily: "'Inter', sans-serif" }}>
+            <Toaster
                 position="top-center"
                 toastOptions={{
                     style: {
@@ -163,21 +143,21 @@ export default function Home() {
                 }}
             />
             {home.full_bg_url && <div className="bg-blur" style={{ backgroundImage: `url('${home.full_bg_url}')` }}></div>}
-            
+
             {/* Hero Section */}
             <div className="hero-section">
                 <h1>{home.artist_name}</h1>
                 <h2>{home.hero_title}</h2>
-                <iframe 
-                    className="spotify-embed" 
-                    data-testid="embed-iframe" 
-                    style={{borderRadius:'12px'}} 
-                    src="https://open.spotify.com/embed/artist/78yrPwOcBEFSnaUPOycNmS?utm_source=generator" 
-                    width="100%" 
-                    height="352" 
-                    frameBorder="0" 
-                    allowfullscreen="" 
-                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+                <iframe
+                    className="spotify-embed"
+                    data-testid="embed-iframe"
+                    style={{ borderRadius: '12px' }}
+                    src="https://open.spotify.com/embed/artist/78yrPwOcBEFSnaUPOycNmS?utm_source=generator"
+                    width="100%"
+                    height="352"
+                    frameBorder="0"
+                    allowfullscreen=""
+                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
                     loading="lazy"
                 ></iframe>
                 <p>{home.hero_subtitle}</p>
@@ -189,21 +169,21 @@ export default function Home() {
                 <div className="releases-header">
                     <h2 className="releases-title">Latest Releases</h2>
                     <div className="view-toggle">
-                        <button 
+                        <button
                             className={`view-btn ${releaseView === 'grid' ? 'active' : ''}`}
                             onClick={() => handleViewChange('grid')}
                             title="Grid View"
                         >
                             <FaTh />
                         </button>
-                        <button 
+                        <button
                             className={`view-btn ${releaseView === 'list' ? 'active' : ''}`}
                             onClick={() => handleViewChange('list')}
                             title="List View"
                         >
                             <FaList />
                         </button>
-                        <button 
+                        <button
                             className={`view-btn ${releaseView === 'carousel' ? 'active' : ''}`}
                             onClick={() => handleViewChange('carousel')}
                             title="Carousel View"
@@ -216,12 +196,12 @@ export default function Home() {
                 {/* Grid View */}
                 <div className={`releases-container ${releaseView === 'grid' ? 'view-grid' : ''}`}>
                     {currentReleases && currentReleases.map(r => (
-                        <a 
-                            key={r.id} 
-                            href={`/?s=${r.shortcode}`} 
+                        <a
+                            key={r.id}
+                            href={`/?s=${r.shortcode}`}
                             className="release-card"
                         >
-                            <img 
+                            <img
                                 src={r.full_cover_url}
                                 alt={r.title}
                             />
@@ -240,12 +220,12 @@ export default function Home() {
                 {/* List View */}
                 <div className={`releases-container ${releaseView === 'list' ? 'view-list' : ''}`}>
                     {currentReleases && currentReleases.map(r => (
-                        <a 
-                            key={r.id} 
-                            href={`/?s=${r.shortcode}`} 
+                        <a
+                            key={r.id}
+                            href={`/?s=${r.shortcode}`}
                             className="release-card-list"
                         >
-                            <img 
+                            <img
                                 src={r.full_cover_url}
                                 alt={r.title}
                             />
@@ -267,9 +247,9 @@ export default function Home() {
                 <div className={`releases-container ${releaseView === 'carousel' ? 'view-carousel' : ''}`}>
                     <div className="carousel-wrapper">
                         {currentReleases && currentReleases.map(r => (
-                            <a 
-                                key={r.id} 
-                                href={`/?s=${r.shortcode}`} 
+                            <a
+                                key={r.id}
+                                href={`/?s=${r.shortcode}`}
                                 className="release-card"
                                 style={{
                                     minWidth: 160,
@@ -278,7 +258,7 @@ export default function Home() {
                                     scrollSnapAlign: 'start'
                                 }}
                             >
-                                <img 
+                                <img
                                     src={r.full_cover_url}
                                     alt={r.title}
                                 />
@@ -299,14 +279,14 @@ export default function Home() {
                 {/* Pagination Controls */}
                 {totalPages > 1 && (
                     <div className="pagination-container">
-                        <button 
+                        <button
                             className="pagination-btn"
                             onClick={() => paginate(currentPage - 1)}
                             disabled={currentPage === 1}
                         >
                             ← Previous
                         </button>
-                        
+
                         <div className="pagination-numbers">
                             {Array.from({ length: totalPages }, (_, i) => i + 1).map(number => (
                                 <button
@@ -318,8 +298,8 @@ export default function Home() {
                                 </button>
                             ))}
                         </div>
-                        
-                        <button 
+
+                        <button
                             className="pagination-btn"
                             onClick={() => paginate(currentPage + 1)}
                             disabled={currentPage === totalPages}
@@ -336,40 +316,27 @@ export default function Home() {
                     <div className="about-container">
                         <div className="about-image-wrapper">
                             {home.full_about_me_image_url ? (
-                                <img 
-                                    src={home.full_about_me_image_url} 
-                                    alt="About" 
+                                <img
+                                    src={home.full_about_me_image_url}
+                                    alt="About"
                                     className="about-image"
                                 />
                             ) : (
                                 <div className="about-image-placeholder">
                                     <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                                        <circle cx="12" cy="7" r="4"/>
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                        <circle cx="12" cy="7" r="4" />
                                     </svg>
                                 </div>
                             )}
                         </div>
                         <div className="about-content">
                             <h2 className="about-title">{home.about_me_title || 'About Me'}</h2>
-                            <div 
+                            <div
                                 className="about-text"
                                 dangerouslySetInnerHTML={{ __html: home.about_me_content }}
                             />
                         </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Cookie Consent Banner */}
-            {showCookieBanner && (
-                <div className="cookie-banner">
-                    <div className="cookie-content">
-                        <p>We use cookies to improve your experience on our site. By continuing to use our site, you accept our use of cookies.</p>
-                    </div>
-                    <div className="cookie-actions">
-                        <button onClick={handleAcceptCookies} className="cookie-btn accept">Accept</button>
-                        <button onClick={handleDeclineCookies} className="cookie-btn decline">Decline</button>
                     </div>
                 </div>
             )}
@@ -616,83 +583,6 @@ export default function Home() {
                     border-color: rgba(255, 255, 255, 0.4);
                     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
                 }
-
-                /* Cookie Banner Styles */
-                .cookie-banner {
-                    position: fixed;
-                    bottom: 24px;
-                    left: 50%;
-                    transform: translateX(-50%);
-                    width: 90%;
-                    max-width: 700px;
-                    background: rgba(24, 24, 27, 0.95);
-                    backdrop-filter: blur(12px);
-                    border: 1px solid rgba(255, 255, 255, 0.15);
-                    border-radius: 16px;
-                    padding: 20px 24px;
-                    z-index: 99999;
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-between;
-                    gap: 24px;
-                    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
-                    animation: slideUpCookie 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-                }
-
-                .cookie-content p {
-                    margin: 0;
-                    font-size: 14px;
-                    color: rgba(255, 255, 255, 0.85);
-                    line-height: 1.6;
-                }
-
-                .cookie-actions {
-                    display: flex;
-                    gap: 12px;
-                    flex-shrink: 0;
-                }
-
-                .cookie-btn {
-                    padding: 10px 20px;
-                    border-radius: 8px;
-                    font-size: 14px;
-                    font-weight: 600;
-                    cursor: pointer;
-                    transition: all 0.2s ease;
-                    border: none;
-                }
-
-                .cookie-btn.accept {
-                    background: #10b981;
-                    color: white;
-                }
-
-                .cookie-btn.accept:hover {
-                    background: #059669;
-                    transform: translateY(-2px);
-                }
-
-                .cookie-btn.decline {
-                    background: transparent;
-                    color: rgba(255, 255, 255, 0.7);
-                    border: 1px solid rgba(255, 255, 255, 0.2);
-                }
-
-                .cookie-btn.decline:hover {
-                    background: rgba(255, 255, 255, 0.1);
-                    color: white;
-                }
-
-                @keyframes slideUpCookie {
-                    from {
-                        transform: translate(-50%, 150%);
-                        opacity: 0;
-                    }
-                    to {
-                        transform: translate(-50%, 0);
-                        opacity: 1;
-                    }
-                }
                 
                 /* Mobile Responsive */
                 @media (max-width: 768px) {
@@ -742,24 +632,6 @@ export default function Home() {
                     .footer-grid {
                         grid-template-columns: 1fr !important;
                         gap: 30px !important;
-                    }
-
-                    .cookie-banner {
-                        flex-direction: column;
-                        text-align: center;
-                        padding: 20px;
-                        bottom: 16px;
-                        gap: 16px;
-                    }
-                    
-                    .cookie-actions {
-                        width: 100%;
-                        justify-content: stretch;
-                    }
-                    
-                    .cookie-btn {
-                        flex: 1;
-                        padding: 12px;
                     }
                 }
                 
@@ -982,9 +854,9 @@ export default function Home() {
                             lineHeight: 1.6,
                             margin: '0 0 20px 0'
                         }}>{home.hero_subtitle || 'Official artist website. Listen to the latest releases on all major platforms.'}</p>
-                        
+
                         {/* Social Media Icons */}
-                        <div style={{display: 'flex', gap: 12}}>
+                        <div style={{ display: 'flex', gap: 12 }}>
                             <a href="https://www.facebook.com/LeiradOfficial/" target="_blank" rel="noopener noreferrer" style={{
                                 width: 40,
                                 height: 40,
@@ -998,14 +870,14 @@ export default function Home() {
                                 transition: '0.3s',
                                 fontSize: 18
                             }}
-                            onMouseOver={e => {
-                                e.currentTarget.style.background = 'rgba(255,255,255,0.25)';
-                                e.currentTarget.style.transform = 'translateY(-3px)';
-                            }}
-                            onMouseOut={e => {
-                                e.currentTarget.style.background = 'rgba(255,255,255,0.15)';
-                                e.currentTarget.style.transform = 'translateY(0)';
-                            }}
+                                onMouseOver={e => {
+                                    e.currentTarget.style.background = 'rgba(255,255,255,0.25)';
+                                    e.currentTarget.style.transform = 'translateY(-3px)';
+                                }}
+                                onMouseOut={e => {
+                                    e.currentTarget.style.background = 'rgba(255,255,255,0.15)';
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                }}
                             >
                                 <FaFacebook />
                             </a>
@@ -1022,14 +894,14 @@ export default function Home() {
                                 transition: '0.3s',
                                 fontSize: 18
                             }}
-                            onMouseOver={e => {
-                                e.currentTarget.style.background = 'rgba(255,255,255,0.25)';
-                                e.currentTarget.style.transform = 'translateY(-3px)';
-                            }}
-                            onMouseOut={e => {
-                                e.currentTarget.style.background = 'rgba(255,255,255,0.15)';
-                                e.currentTarget.style.transform = 'translateY(0)';
-                            }}
+                                onMouseOver={e => {
+                                    e.currentTarget.style.background = 'rgba(255,255,255,0.25)';
+                                    e.currentTarget.style.transform = 'translateY(-3px)';
+                                }}
+                                onMouseOut={e => {
+                                    e.currentTarget.style.background = 'rgba(255,255,255,0.15)';
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                }}
                             >
                                 <FaInstagram />
                             </a>
@@ -1046,14 +918,14 @@ export default function Home() {
                                 transition: '0.3s',
                                 fontSize: 18
                             }}
-                            onMouseOver={e => {
-                                e.currentTarget.style.background = 'rgba(255,255,255,0.25)';
-                                e.currentTarget.style.transform = 'translateY(-3px)';
-                            }}
-                            onMouseOut={e => {
-                                e.currentTarget.style.background = 'rgba(255,255,255,0.15)';
-                                e.currentTarget.style.transform = 'translateY(0)';
-                            }}
+                                onMouseOver={e => {
+                                    e.currentTarget.style.background = 'rgba(255,255,255,0.25)';
+                                    e.currentTarget.style.transform = 'translateY(-3px)';
+                                }}
+                                onMouseOut={e => {
+                                    e.currentTarget.style.background = 'rgba(255,255,255,0.15)';
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                }}
                             >
                                 <FaTiktok />
                             </a>
@@ -1069,20 +941,20 @@ export default function Home() {
                             textTransform: 'uppercase',
                             letterSpacing: 1.5
                         }}>Quick Links</h4>
-                        <div style={{display: 'flex', flexDirection: 'column', gap: 10}}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                             <a href="/" style={{
                                 textDecoration: 'none',
                                 fontSize: 14,
                                 transition: '0.2s',
                                 padding: '4px 0'
                             }}
-                            onMouseOver={e => {
-                                e.currentTarget.style.color = '#fff';
-                                e.currentTarget.style.paddingLeft = '8px';
-                            }}
-                            onMouseOut={e => {
-                                e.currentTarget.style.paddingLeft = '0';
-                            }}
+                                onMouseOver={e => {
+                                    e.currentTarget.style.color = '#fff';
+                                    e.currentTarget.style.paddingLeft = '8px';
+                                }}
+                                onMouseOut={e => {
+                                    e.currentTarget.style.paddingLeft = '0';
+                                }}
                             >Home</a>
                             <a href="https://www.facebook.com/LeiradOfficial/" target="_blank" rel="noopener noreferrer" style={{
                                 textDecoration: 'none',
@@ -1090,13 +962,13 @@ export default function Home() {
                                 transition: '0.2s',
                                 padding: '4px 0'
                             }}
-                            onMouseOver={e => {
-                                e.currentTarget.style.color = '#fff';
-                                e.currentTarget.style.paddingLeft = '8px';
-                            }}
-                            onMouseOut={e => {
-                                e.currentTarget.style.paddingLeft = '0';
-                            }}
+                                onMouseOver={e => {
+                                    e.currentTarget.style.color = '#fff';
+                                    e.currentTarget.style.paddingLeft = '8px';
+                                }}
+                                onMouseOut={e => {
+                                    e.currentTarget.style.paddingLeft = '0';
+                                }}
                             >Facebook</a>
                             <a href="https://www.tiktok.com/@chen.official" target="_blank" rel="noopener noreferrer" style={{
                                 textDecoration: 'none',
@@ -1104,13 +976,13 @@ export default function Home() {
                                 transition: '0.2s',
                                 padding: '4px 0'
                             }}
-                            onMouseOver={e => {
-                                e.currentTarget.style.color = '#fff';
-                                e.currentTarget.style.paddingLeft = '8px';
-                            }}
-                            onMouseOut={e => {
-                                e.currentTarget.style.paddingLeft = '0';
-                            }}
+                                onMouseOver={e => {
+                                    e.currentTarget.style.color = '#fff';
+                                    e.currentTarget.style.paddingLeft = '8px';
+                                }}
+                                onMouseOut={e => {
+                                    e.currentTarget.style.paddingLeft = '0';
+                                }}
                             >TikTok</a>
                         </div>
                     </div>
@@ -1124,7 +996,7 @@ export default function Home() {
                             textTransform: 'uppercase',
                             letterSpacing: 1.5
                         }}>Latest Releases</h4>
-                        <div style={{display: 'flex', flexDirection: 'column', gap: 12}}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                             {releases && releases.slice(0, 3).map(r => (
                                 <a key={r.id} href={`/?s=${r.shortcode}`} style={{
                                     display: 'flex',
@@ -1136,12 +1008,12 @@ export default function Home() {
                                     padding: '6px',
                                     borderRadius: 6
                                 }}
-                                onMouseOver={e => {
-                                    e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
-                                }}
-                                onMouseOut={e => {
-                                    e.currentTarget.style.background = 'transparent';
-                                }}
+                                    onMouseOver={e => {
+                                        e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                                    }}
+                                    onMouseOut={e => {
+                                        e.currentTarget.style.background = 'transparent';
+                                    }}
                                 >
                                     <img src={r.full_cover_url} alt={r.title} style={{
                                         width: 45,
@@ -1196,9 +1068,9 @@ export default function Home() {
                             margin: '0 0 15px 0'
                         }}>Subscribe to get the latest news and releases.</p>
                         <form onSubmit={handleSubscribe}>
-                            <div style={{display: 'flex', flexDirection: 'column', gap: 10}}>
-                                <input 
-                                    type="email" 
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                <input
+                                    type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     placeholder="Enter your email"
@@ -1221,21 +1093,21 @@ export default function Home() {
                                         e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
                                     }}
                                 />
-                                
+
                                 {/* Cloudflare Turnstile */}
-                                <div style={{ 
-                                    display: 'flex', 
+                                <div style={{
+                                    display: 'flex',
                                     justifyContent: 'center',
                                     margin: '5px 0'
                                 }}>
-                                    <Turnstile 
-                                        siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY} 
+                                    <Turnstile
+                                        siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
                                         onSuccess={(token) => setTurnstileToken(token)}
                                         options={{ theme: 'dark' }}
                                     />
                                 </div>
-                                
-                                <button 
+
+                                <button
                                     type="submit"
                                     style={{
                                         width: '100%',
