@@ -1,6 +1,18 @@
 import { useEffect, useState } from 'react';
 import Preloader from './Preloader.jsx';
-import { FaFacebook, FaTiktok, FaInstagram, FaSpotify, FaTh, FaList, FaThLarge } from 'react-icons/fa';
+import { 
+    FaFacebook, 
+    FaTiktok, 
+    FaInstagram, 
+    FaSpotify, 
+    FaTh, 
+    FaList, 
+    FaThLarge, 
+    FaApple, 
+    FaYoutube, 
+    FaAmazon 
+} from 'react-icons/fa';
+import { SiTidal } from 'react-icons/si';
 import toast, { Toaster } from 'react-hot-toast';
 import { Turnstile } from '@marsidev/react-turnstile';
 
@@ -47,7 +59,6 @@ export default function Home() {
 
             try {
                 // Encode email to prevent casual viewing in Network tab
-                // Note: This is obfuscation, not encryption. HTTPS provides actual transit security.
                 const encodedEmail = btoa(encodeURIComponent(email));
 
                 const response = await fetch(`${API_BASE_URL}/subscribe.php`, {
@@ -104,7 +115,6 @@ export default function Home() {
     // Pagination controls
     const paginate = (pageNumber) => {
         setCurrentPage(pageNumber);
-        // Scroll to top of releases section
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
@@ -123,22 +133,13 @@ export default function Home() {
                         boxShadow: '0 10px 25px rgba(0,0,0,0.3)'
                     },
                     success: {
-                        iconTheme: {
-                            primary: '#10b981',
-                            secondary: '#fff'
-                        }
+                        iconTheme: { primary: '#10b981', secondary: '#fff' }
                     },
                     error: {
-                        iconTheme: {
-                            primary: '#ef4444',
-                            secondary: '#fff'
-                        }
+                        iconTheme: { primary: '#ef4444', secondary: '#fff' }
                     },
                     loading: {
-                        iconTheme: {
-                            primary: '#3b82f6',
-                            secondary: '#fff'
-                        }
+                        iconTheme: { primary: '#3b82f6', secondary: '#fff' }
                     }
                 }}
             />
@@ -168,9 +169,8 @@ export default function Home() {
                 <p>{home.hero_subtitle}</p>
             </div>
 
-            {/* Releases Section - User Selectable View */}
+            {/* Releases Section */}
             <div className="releases-section">
-                {/* Section Header with View Toggle */}
                 <div className="releases-header">
                     <h2 className="releases-title">Latest Releases</h2>
                     <div className="view-toggle">
@@ -206,10 +206,7 @@ export default function Home() {
                             href={`/?s=${r.shortcode}`}
                             className="release-card"
                         >
-                            <img
-                                src={r.full_cover_url}
-                                alt={r.title}
-                            />
+                            <img src={r.full_cover_url} alt={r.title} />
                             <h3>{r.title}</h3>
                             <p>{r.artist}</p>
                             {r.stream_count && (
@@ -218,6 +215,13 @@ export default function Home() {
                                     {r.stream_count} Streams
                                 </p>
                             )}
+                            <div className="platform-icons">
+                                <FaSpotify title="Spotify" />
+                                <FaApple title="Apple Music" />
+                                <FaYoutube title="YouTube Music" />
+                                <FaAmazon title="Amazon Music" />
+                                <SiTidal title="Tidal" />
+                            </div>
                         </a>
                     ))}
                 </div>
@@ -230,19 +234,23 @@ export default function Home() {
                             href={`/?s=${r.shortcode}`}
                             className="release-card-list"
                         >
-                            <img
-                                src={r.full_cover_url}
-                                alt={r.title}
-                            />
+                            <img src={r.full_cover_url} alt={r.title} />
                             <div className="release-info">
                                 <h3>{r.title}</h3>
                                 <p>{r.artist}</p>
                                 {r.stream_count && (
-                                    <p style={{ fontSize: 12, color: '#10b981', marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                                    <p style={{ fontSize: 12, color: '#10b981', marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 4 }}>
                                         <FaSpotify size={12} />
                                         {r.stream_count} Streams
                                     </p>
                                 )}
+                                <div className="platform-icons">
+                                    <FaSpotify title="Spotify" />
+                                    <FaApple title="Apple Music" />
+                                    <FaYoutube title="YouTube Music" />
+                                    <FaAmazon title="Amazon Music" />
+                                    <SiTidal title="Tidal" />
+                                </div>
                             </div>
                         </a>
                     ))}
@@ -263,10 +271,7 @@ export default function Home() {
                                     scrollSnapAlign: 'start'
                                 }}
                             >
-                                <img
-                                    src={r.full_cover_url}
-                                    alt={r.title}
-                                />
+                                <img src={r.full_cover_url} alt={r.title} />
                                 <h3>{r.title}</h3>
                                 <p>{r.artist}</p>
                                 {r.stream_count && (
@@ -275,6 +280,13 @@ export default function Home() {
                                         {r.stream_count} Streams
                                     </p>
                                 )}
+                                <div className="platform-icons">
+                                    <FaSpotify title="Spotify" />
+                                    <FaApple title="Apple Music" />
+                                    <FaYoutube title="YouTube Music" />
+                                    <FaAmazon title="Amazon Music" />
+                                    <SiTidal title="Tidal" />
+                                </div>
                             </a>
                         ))}
                     </div>
@@ -556,6 +568,36 @@ export default function Home() {
                     color: rgba(255, 255, 255, 0.5);
                     text-align: center;
                     margin: 10px 0 0 0;
+                }
+
+                /* Music Platform Icons */
+                .platform-icons {
+                    display: flex;
+                    gap: 10px;
+                    justify-content: center;
+                    align-items: center;
+                    margin-top: 12px;
+                    color: rgba(255, 255, 255, 0.4);
+                }
+
+                .release-card-list .platform-icons {
+                    justify-content: flex-start;
+                    margin-top: 8px;
+                }
+
+                .platform-icons svg {
+                    font-size: 14px;
+                    transition: all 0.3s ease;
+                }
+
+                .release-card:hover .platform-icons svg,
+                .release-card-list:hover .platform-icons svg {
+                    color: rgba(255, 255, 255, 0.8);
+                }
+
+                .platform-icons svg:hover {
+                    color: #fff !important;
+                    transform: scale(1.2);
                 }
                 
                 /* Pagination Styles */
