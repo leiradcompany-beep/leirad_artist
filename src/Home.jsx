@@ -678,9 +678,9 @@ export default function Home() {
                 }
                 
                 .about-container {
-                    display: grid;
-                    grid-template-columns: 1fr 1.5fr;
-                    gap: 60px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 40px;
                     align-items: center;
                     background: rgba(255, 255, 255, 0.03);
                     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -688,41 +688,6 @@ export default function Home() {
                     padding: 50px;
                     backdrop-filter: blur(10px);
                     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-                }
-                
-                .about-image-wrapper {
-                    position: relative;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                }
-                
-                .about-image {
-                    width: 100%;
-                    max-width: 400px;
-                    height: auto;
-                    border-radius: 20px;
-                    object-fit: cover;
-                    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
-                    border: 3px solid rgba(255, 255, 255, 0.1);
-                    transition: transform 0.3s ease;
-                }
-                
-                .about-image:hover {
-                    transform: scale(1.02);
-                }
-                
-                .about-image-placeholder {
-                    width: 100%;
-                    max-width: 400px;
-                    aspect-ratio: 1;
-                    border-radius: 20px;
-                    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
-                    border: 2px dashed rgba(255, 255, 255, 0.15);
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    color: rgba(255, 255, 255, 0.3);
                 }
                 
                 .about-content {
@@ -776,19 +741,8 @@ export default function Home() {
                 /* About Me Section Responsive */
                 @media (max-width: 1024px) {
                     .about-container {
-                        grid-template-columns: 1fr;
                         gap: 40px;
                         padding: 40px;
-                    }
-                    
-                    .about-image-wrapper {
-                        order: -1;
-                    }
-                    
-                    .about-image,
-                    .about-image-placeholder {
-                        max-width: 350px;
-                        margin: 0 auto;
                     }
                     
                     .about-title {
@@ -820,11 +774,6 @@ export default function Home() {
                         font-size: 14px;
                         line-height: 1.7;
                     }
-                    
-                    .about-image,
-                    .about-image-placeholder {
-                        max-width: 300px;
-                    }
                 }
                 
                 @media (max-width: 480px) {
@@ -844,11 +793,6 @@ export default function Home() {
                     
                     .about-text {
                         font-size: 14px;
-                    }
-                    
-                    .about-image,
-                    .about-image-placeholder {
-                        max-width: 100%;
                     }
                 }
             `}</style>
