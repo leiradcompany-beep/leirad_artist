@@ -146,20 +146,22 @@ export default function Home() {
 
             {/* Hero Section */}
             <div className="hero-section">
+                {home.full_about_me_image_url ? (
+                    <img
+                        src={home.full_about_me_image_url}
+                        alt="Profile"
+                        className="hero-profile-image"
+                    />
+                ) : (
+                    <div className="hero-profile-image-placeholder">
+                        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                        </svg>
+                    </div>
+                )}
                 <h1>{home.artist_name}</h1>
                 <h2>{home.hero_title}</h2>
-                <iframe
-                    className="spotify-embed"
-                    data-testid="embed-iframe"
-                    style={{ borderRadius: '12px' }}
-                    src="https://open.spotify.com/embed/artist/78yrPwOcBEFSnaUPOycNmS?utm_source=generator"
-                    width="100%"
-                    height="352"
-                    frameBorder="0"
-                    allowfullscreen=""
-                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                    loading="lazy"
-                ></iframe>
                 <p>{home.hero_subtitle}</p>
             </div>
 
@@ -314,28 +316,24 @@ export default function Home() {
             {home.about_me_content && (
                 <div className="about-section">
                     <div className="about-container">
-                        <div className="about-image-wrapper">
-                            {home.full_about_me_image_url ? (
-                                <img
-                                    src={home.full_about_me_image_url}
-                                    alt="About"
-                                    className="about-image"
-                                />
-                            ) : (
-                                <div className="about-image-placeholder">
-                                    <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                        <circle cx="12" cy="7" r="4" />
-                                    </svg>
-                                </div>
-                            )}
-                        </div>
                         <div className="about-content">
                             <h2 className="about-title">{home.about_me_title || 'About Me'}</h2>
                             <div
                                 className="about-text"
                                 dangerouslySetInnerHTML={{ __html: home.about_me_content }}
                             />
+                            <iframe
+                                className="spotify-embed"
+                                data-testid="embed-iframe"
+                                style={{ borderRadius: '12px', marginTop: '20px' }}
+                                src="https://open.spotify.com/embed/artist/78yrPwOcBEFSnaUPOycNmS?utm_source=generator"
+                                width="100%"
+                                height="352"
+                                frameBorder="0"
+                                allowfullscreen=""
+                                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                                loading="lazy"
+                            ></iframe>
                         </div>
                     </div>
                 </div>
@@ -343,6 +341,30 @@ export default function Home() {
 
             {/* Responsive Styles */}
             <style>{`
+                /* Hero Profile Image */
+                .hero-profile-image {
+                    width: 150px;
+                    height: 150px;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    margin-bottom: 20px;
+                    border: 3px solid rgba(255, 255, 255, 0.2);
+                    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+                }
+
+                .hero-profile-image-placeholder {
+                    width: 150px;
+                    height: 150px;
+                    border-radius: 50%;
+                    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+                    border: 2px dashed rgba(255, 255, 255, 0.15);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    color: rgba(255, 255, 255, 0.3);
+                    margin-bottom: 20px;
+                }
+                
                 /* Spotify Embed Responsive */
                 .spotify-embed {
                     width: 100%;
