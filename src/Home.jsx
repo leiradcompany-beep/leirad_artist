@@ -145,21 +145,26 @@ export default function Home() {
             {home.full_bg_url && <div className="bg-blur" style={{ backgroundImage: `url('${home.full_bg_url}')` }}></div>}
 
             {/* Hero Section */}
-            <div className="hero-section">
+            <div className="hero-section" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
                 <h1>{home.artist_name}</h1>
                 <h2>{home.hero_title}</h2>
-                <iframe
-                    className="spotify-embed"
-                    data-testid="embed-iframe"
-                    style={{ borderRadius: '12px' }}
-                    src="https://open.spotify.com/embed/artist/78yrPwOcBEFSnaUPOycNmS?utm_source=generator"
-                    width="100%"
-                    height="352"
-                    frameBorder="0"
-                    allowfullscreen=""
-                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                    loading="lazy"
-                ></iframe>
+                
+                {/* Profile Image (Swapped from About Section) */}
+                {home.full_about_me_image_url ? (
+                    <img
+                        src={home.full_about_me_image_url}
+                        alt="Profile"
+                        className="hero-image"
+                    />
+                ) : (
+                    <div className="hero-image-placeholder">
+                        <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                        </svg>
+                    </div>
+                )}
+                
                 <p>{home.hero_subtitle}</p>
             </div>
 
@@ -315,20 +320,19 @@ export default function Home() {
                 <div className="about-section">
                     <div className="about-container">
                         <div className="about-image-wrapper">
-                            {home.full_about_me_image_url ? (
-                                <img
-                                    src={home.full_about_me_image_url}
-                                    alt="About"
-                                    className="about-image"
-                                />
-                            ) : (
-                                <div className="about-image-placeholder">
-                                    <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                        <circle cx="12" cy="7" r="4" />
-                                    </svg>
-                                </div>
-                            )}
+                            {/* Spotify Embed (Swapped from Hero Section) */}
+                            <iframe
+                                className="spotify-embed"
+                                data-testid="embed-iframe"
+                                style={{ borderRadius: '12px' }}
+                                src="https://open.spotify.com/embed/artist/78yrPwOcBEFSnaUPOycNmS?utm_source=generator"
+                                width="100%"
+                                height="352"
+                                frameBorder="0"
+                                allowFullScreen
+                                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                                loading="lazy"
+                            ></iframe>
                         </div>
                         <div className="about-content">
                             <h2 className="about-title">{home.about_me_title || 'About Me'}</h2>
@@ -346,16 +350,47 @@ export default function Home() {
                 /* Spotify Embed Responsive */
                 .spotify-embed {
                     width: 100%;
-                    max-width: 100%;
+                    max-width: 400px;
                     height: 352px;
+                    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
                 }
                 
+                /* Hero Image Styles */
+                .hero-image {
+                    width: 100%;
+                    max-width: 250px;
+                    height: 250px;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    margin: 20px 0;
+                    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+                    border: 3px solid rgba(255, 255, 255, 0.1);
+                }
+                
+                .hero-image-placeholder {
+                    width: 100%;
+                    max-width: 250px;
+                    height: 250px;
+                    border-radius: 50%;
+                    margin: 20px 0;
+                    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+                    border: 2px dashed rgba(255, 255, 255, 0.15);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    color: rgba(255, 255, 255, 0.3);
+                }
+
                 /* Mobile devices (≤480px) */
                 @media (max-width: 480px) {
                     .spotify-embed {
                         width: 100% !important;
                         max-width: 100% !important;
                         height: 352px !important;
+                    }
+                    .hero-image, .hero-image-placeholder {
+                        max-width: 180px;
+                        height: 180px;
                     }
                 }
                 
@@ -366,13 +401,17 @@ export default function Home() {
                         max-width: 100% !important;
                         height: 352px !important;
                     }
+                    .hero-image, .hero-image-placeholder {
+                        max-width: 200px;
+                        height: 200px;
+                    }
                 }
                 
                 /* Desktop devices (≥769px) */
                 @media (min-width: 769px) {
                     .spotify-embed {
-                        width: 40% !important;
-                        max-width: 500px !important;
+                        width: 100% !important;
+                        max-width: 400px !important;
                         height: 352px !important;
                     }
                 }
@@ -675,34 +714,6 @@ export default function Home() {
                     align-items: center;
                 }
                 
-                .about-image {
-                    width: 100%;
-                    max-width: 400px;
-                    height: auto;
-                    border-radius: 20px;
-                    object-fit: cover;
-                    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
-                    border: 3px solid rgba(255, 255, 255, 0.1);
-                    transition: transform 0.3s ease;
-                }
-                
-                .about-image:hover {
-                    transform: scale(1.02);
-                }
-                
-                .about-image-placeholder {
-                    width: 100%;
-                    max-width: 400px;
-                    aspect-ratio: 1;
-                    border-radius: 20px;
-                    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
-                    border: 2px dashed rgba(255, 255, 255, 0.15);
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    color: rgba(255, 255, 255, 0.3);
-                }
-                
                 .about-content {
                     display: flex;
                     flex-direction: column;
@@ -763,12 +774,6 @@ export default function Home() {
                         order: -1;
                     }
                     
-                    .about-image,
-                    .about-image-placeholder {
-                        max-width: 350px;
-                        margin: 0 auto;
-                    }
-                    
                     .about-title {
                         font-size: 36px;
                         text-align: center;
@@ -798,11 +803,6 @@ export default function Home() {
                         font-size: 14px;
                         line-height: 1.7;
                     }
-                    
-                    .about-image,
-                    .about-image-placeholder {
-                        max-width: 300px;
-                    }
                 }
                 
                 @media (max-width: 480px) {
@@ -822,11 +822,6 @@ export default function Home() {
                     
                     .about-text {
                         font-size: 14px;
-                    }
-                    
-                    .about-image,
-                    .about-image-placeholder {
-                        max-width: 100%;
                     }
                 }
             `}</style>
