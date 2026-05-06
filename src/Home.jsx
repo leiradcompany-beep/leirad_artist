@@ -1050,6 +1050,22 @@ export default function Home() {
                                     e.currentTarget.style.color = 'rgba(255,255,255,0.7)';
                                 }}
                             >Cookie Preferences</button>
+                            <a href="/cookie-policy" style={{
+                                textDecoration: 'none',
+                                fontSize: 14,
+                                transition: '0.2s',
+                                padding: '4px 0',
+                                color: 'rgba(255,255,255,0.7)'
+                            }}
+                                onMouseOver={e => {
+                                    e.currentTarget.style.color = '#fff';
+                                    e.currentTarget.style.paddingLeft = '8px';
+                                }}
+                                onMouseOut={e => {
+                                    e.currentTarget.style.paddingLeft = '0';
+                                    e.currentTarget.style.color = 'rgba(255,255,255,0.7)';
+                                }}
+                            >Cookie Policy</a>
                         </div>
                     </div>
 
