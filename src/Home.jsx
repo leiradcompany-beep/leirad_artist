@@ -983,7 +983,8 @@ export default function Home() {
                                 textDecoration: 'none',
                                 fontSize: 14,
                                 transition: '0.2s',
-                                padding: '4px 0'
+                                padding: '4px 0',
+                                color: 'rgba(255,255,255,0.7)'
                             }}
                                 onMouseOver={e => {
                                     e.currentTarget.style.color = '#fff';
@@ -991,13 +992,15 @@ export default function Home() {
                                 }}
                                 onMouseOut={e => {
                                     e.currentTarget.style.paddingLeft = '0';
+                                    e.currentTarget.style.color = 'rgba(255,255,255,0.7)';
                                 }}
                             >Home</a>
                             <a href="https://www.facebook.com/LeiradOfficial/" target="_blank" rel="noopener noreferrer" style={{
                                 textDecoration: 'none',
                                 fontSize: 14,
                                 transition: '0.2s',
-                                padding: '4px 0'
+                                padding: '4px 0',
+                                color: 'rgba(255,255,255,0.7)'
                             }}
                                 onMouseOver={e => {
                                     e.currentTarget.style.color = '#fff';
@@ -1005,9 +1008,34 @@ export default function Home() {
                                 }}
                                 onMouseOut={e => {
                                     e.currentTarget.style.paddingLeft = '0';
+                                    e.currentTarget.style.color = 'rgba(255,255,255,0.7)';
                                 }}
                             >Facebook</a>
-                            <a href="https://www.tiktok.com/@chen.official" target="_blank" rel="noopener noreferrer" style={{
+                            <a href="https://www.tiktok.com/@leirad.g.official" target="_blank" rel="noopener noreferrer" style={{
+                                textDecoration: 'none',
+                                fontSize: 14,
+                                transition: '0.2s',
+                                padding: '4px 0',
+                                color: 'rgba(255,255,255,0.7)'
+                            }}
+                                onMouseOver={e => {
+                                    e.currentTarget.style.color = '#fff';
+                                    e.currentTarget.style.paddingLeft = '8px';
+                                }}
+                                onMouseOut={e => {
+                                    e.currentTarget.style.paddingLeft = '0';
+                                    e.currentTarget.style.color = 'rgba(255,255,255,0.7)';
+                                }}
+                            >TikTok</a>
+                            <button onClick={() => {
+                                const icon = document.getElementById('silktide-cookie-icon');
+                                if (icon) icon.click();
+                            }} style={{
+                                background: 'none',
+                                border: 'none',
+                                color: 'rgba(255,255,255,0.7)',
+                                textAlign: 'left',
+                                cursor: 'pointer',
                                 textDecoration: 'none',
                                 fontSize: 14,
                                 transition: '0.2s',
@@ -1019,8 +1047,9 @@ export default function Home() {
                                 }}
                                 onMouseOut={e => {
                                     e.currentTarget.style.paddingLeft = '0';
+                                    e.currentTarget.style.color = 'rgba(255,255,255,0.7)';
                                 }}
-                            >TikTok</a>
+                            >Cookie Preferences</button>
                         </div>
                     </div>
 
