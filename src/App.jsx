@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import Home from './Home.jsx';
 import Announcements from './Announcements.jsx';
 import Preloader from './Preloader.jsx';
@@ -139,12 +139,10 @@ function App() {
 
     if (!shortcode) {
         return (
-            <Router>
-                <Routes>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/announcements" element={<Announcements />} />
-                </Routes>
-            </Router>
+            <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/announcements" element={<Announcements />} />
+            </Routes>
         );
     }
 
