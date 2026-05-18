@@ -174,12 +174,61 @@ export default function Home() {
             {data.announcements && data.announcements.length > 0 && (
                 <div className="announcements-section" style={{ position: 'relative', zIndex: 10 }}>
                     <h2 className="announcements-title">Latest Updates</h2>
+                    
+                    {/* Latest Announcement Preview */}
+                    <div style={{ 
+                        background: 'rgba(255, 255, 255, 0.05)', 
+                        border: '1px solid rgba(255, 255, 255, 0.1)', 
+                        borderRadius: '16px', 
+                        padding: '24px', 
+                        marginBottom: '24px',
+                        backdropFilter: 'blur(10px)',
+                        textAlign: 'left',
+                        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.2)'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '10px' }}>
+                            <h3 style={{ margin: 0, color: '#fff', fontSize: '20px', fontWeight: '600' }}>{data.announcements[0].title}</h3>
+                            <span style={{ fontSize: '12px', color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', padding: '4px 12px', borderRadius: '20px', fontWeight: '600', letterSpacing: '0.5px', textTransform: 'uppercase' }}>NEW UPDATE</span>
+                        </div>
+                        <div 
+                            style={{ 
+                                color: 'rgba(255, 255, 255, 0.8)', 
+                                fontSize: '15px', 
+                                lineHeight: '1.6',
+                                display: '-webkit-box', 
+                                WebkitLineClamp: '2', 
+                                WebkitBoxOrient: 'vertical', 
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                marginBottom: '20px'
+                            }}
+                            className="announcement-preview-content"
+                            dangerouslySetInnerHTML={{ __html: data.announcements[0].content }}
+                        />
+                        <div style={{ textAlign: 'left' }}>
+                            <Link 
+                                to="/announcements" 
+                                style={{
+                                    color: '#10b981',
+                                    textDecoration: 'none',
+                                    fontSize: '14px',
+                                    fontWeight: '600',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '6px'
+                                }}
+                            >
+                                Read full announcement <span style={{ fontSize: '16px' }}>→</span>
+                            </Link>
+                        </div>
+                    </div>
+
                     <div style={{ textAlign: 'center', marginBottom: '20px' }}>
                         <Link 
                             to="/announcements" 
                             className="view-announcements-btn"
                         >
-                            View All Announcements →
+                            View All Announcements
                         </Link>
                     </div>
                 </div>
@@ -648,6 +697,19 @@ export default function Home() {
                     transform: translateY(-2px);
                     box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
                     color: #fff;
+                }
+                
+                .announcement-preview-content p {
+                    margin: 0;
+                    display: inline;
+                }
+                
+                .announcement-preview-content * {
+                    color: inherit !important;
+                    font-size: inherit !important;
+                    line-height: inherit !important;
+                    text-decoration: none !important;
+                    background: transparent !important;
                 }
                 
                 /* Pagination Styles */
