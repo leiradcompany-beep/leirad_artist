@@ -142,6 +142,7 @@ function App() {
             <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/announcements" element={<Announcements />} />
+                <Route path="*" element={<Home />} />
             </Routes>
         );
     }
