@@ -5,7 +5,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import { 
     LayoutDashboard, LogOut, Plus, Edit2, Trash2, Share2, 
     Home as HomeIcon, KeyRound, X, ExternalLink, Menu, Users, Mail,
-    MousePointerClick
+    MousePointerClick, Bell
 } from 'lucide-react';
 import Preloader from './Preloader.jsx';
 import { 
@@ -778,6 +778,42 @@ function AdminLayout({ onLogout, children }) {
                     >
                         <Users size={20} style={{ flexShrink: 0, color: location.pathname.startsWith('/admin/subscribers') ? '#10b981' : 'inherit' }} />
                         {sidebarUnfolded && <span style={{ whiteSpace: 'nowrap' }}>Subscribers</span>}
+                    </Link>
+
+                    <Link 
+                        to="/admin/announcements"
+                        style={{
+                            color: location.pathname.startsWith('/admin/announcements') ? '#fff' : '#a1a1aa',
+                            background: location.pathname.startsWith('/admin/announcements') ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
+                            padding: '12px 16px',
+                            margin: '0 16px',
+                            borderRadius: 10,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: sidebarUnfolded ? 'flex-start' : 'center',
+                            gap: 14,
+                            textDecoration: 'none',
+                            fontWeight: 500,
+                            fontSize: 15,
+                            transition: 'all 0.2s ease',
+                            border: location.pathname.startsWith('/admin/announcements') ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid transparent'
+                        }}
+                        onMouseOver={(e) => {
+                            if (!location.pathname.startsWith('/admin/announcements')) {
+                                e.currentTarget.style.color = '#fff';
+                                e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                            }
+                        }}
+                        onMouseOut={(e) => {
+                            if (!location.pathname.startsWith('/admin/announcements')) {
+                                e.currentTarget.style.color = '#a1a1aa';
+                                e.currentTarget.style.background = 'transparent';
+                            }
+                        }}
+                        title={!sidebarUnfolded ? "Announcements" : ""}
+                    >
+                        <Bell size={20} style={{ flexShrink: 0, color: location.pathname.startsWith('/admin/announcements') ? '#10b981' : 'inherit' }} />
+                        {sidebarUnfolded && <span style={{ whiteSpace: 'nowrap' }}>Announcements</span>}
                     </Link>
 
                     <Link 
@@ -2199,6 +2235,170 @@ function ChangePasswordView({ token, setToken }) {
     );
 }
 
+// Announcements View
+function AnnouncementsView({ token, onLogout }) {
+    const [announcements, setAnnouncements] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [editingAnn, setEditingAnn] = useState(null);
+    const [deleteId, setDeleteId] = useState(null);
+
+    const fetchAnnouncements = useCallback(async () => {
+        setIsLoading(true);
+        const data = await fetchApi('get_announcements', token);
+        if (data.success) {
+            setAnnouncements(data.data);
+        } else if (data.error === 'Unauthorized') {
+            onLogout();
+        }
+        setIsLoading(false);
+    }, [token, onLogout]);
+
+    useEffect(() => {
+        fetchAnnouncements();
+    }, [fetchAnnouncements]);
+
+    const handleSave = async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        
+        const action = editingAnn ? 'update_announcement' : 'add_announcement';
+        if (editingAnn) formData.append('id', editingAnn.id);
+        
+        // Convert checkbox to 1 or 0
+        formData.set('is_active', formData.get('is_active') ? '1' : '0');
+
+        const loadingToast = toast.loading(editingAnn ? 'Updating...' : 'Adding...');
+        
+        try {
+            const data = await fetchApi(action, token, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (data.success) {
+                toast.success(data.message, { id: loadingToast });
+                setIsDrawerOpen(false);
+                fetchAnnouncements();
+            } else {
+                toast.error(data.error || 'Failed to save', { id: loadingToast });
+            }
+        } catch (err) {
+            toast.error('Failed to save', { id: loadingToast });
+        }
+    };
+
+    const handleDelete = async () => {
+        const data = await fetchApi('delete_announcement', token, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `id=${deleteId}`
+        });
+        
+        if (data.success) {
+            toast.success('Announcement deleted');
+            setDeleteId(null);
+            fetchAnnouncements();
+        } else {
+            toast.error(data.error || 'Failed to delete');
+        }
+    };
+
+    if (isLoading) return <Preloader />;
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24, paddingBottom: 40 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                    <h1 style={{ margin: 0, fontSize: 28, fontWeight: 700, color: '#fff', letterSpacing: -0.5 }}>Announcements</h1>
+                    <p style={{ margin: '8px 0 0 0', color: '#a1a1aa', fontSize: 15 }}>Manage updates shown on the homepage</p>
+                </div>
+                <button 
+                    onClick={() => { setEditingAnn(null); setIsDrawerOpen(true); }}
+                    style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: '#fff', border: 'none', padding: '12px 20px', borderRadius: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600, fontSize: 14, boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)', transition: 'all 0.2s' }}
+                    onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(16, 185, 129, 0.4)'; }}
+                    onMouseOut={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)'; }}
+                >
+                    <Plus size={18} /> New Announcement
+                </button>
+            </div>
+
+            <div style={{ background: '#18181b', borderRadius: 16, border: '1px solid #27272a', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
+                {announcements.length === 0 ? (
+                    <div style={{ padding: 40, textAlign: 'center', color: '#a1a1aa' }}>
+                        No announcements found. Click "New Announcement" to create one.
+                    </div>
+                ) : (
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                        <thead>
+                            <tr style={{ borderBottom: '1px solid #27272a', background: 'rgba(255,255,255,0.02)' }}>
+                                <th style={{ padding: '16px 24px', color: '#a1a1aa', fontWeight: 500, fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 }}>Title</th>
+                                <th style={{ padding: '16px 24px', color: '#a1a1aa', fontWeight: 500, fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 }}>Date</th>
+                                <th style={{ padding: '16px 24px', color: '#a1a1aa', fontWeight: 500, fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 }}>Status</th>
+                                <th style={{ padding: '16px 24px', color: '#a1a1aa', fontWeight: 500, fontSize: 13, textTransform: 'uppercase', letterSpacing: 1, textAlign: 'right' }}>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {announcements.map(ann => (
+                                <tr key={ann.id} style={{ borderBottom: '1px solid #27272a', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
+                                    <td style={{ padding: '16px 24px', fontWeight: 500 }}>{ann.title}</td>
+                                    <td style={{ padding: '16px 24px', color: '#a1a1aa', fontSize: 14 }}>{new Date(ann.created_at).toLocaleDateString()}</td>
+                                    <td style={{ padding: '16px 24px' }}>
+                                        <span style={{ 
+                                            padding: '4px 10px', 
+                                            borderRadius: 20, 
+                                            fontSize: 12, 
+                                            fontWeight: 600,
+                                            background: ann.is_active == 1 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                                            color: ann.is_active == 1 ? '#10b981' : '#ef4444'
+                                        }}>
+                                            {ann.is_active == 1 ? 'Active' : 'Inactive'}
+                                        </span>
+                                    </td>
+                                    <td style={{ padding: '16px 24px', textAlign: 'right' }}>
+                                        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                                            <button onClick={() => { setEditingAnn(ann); setIsDrawerOpen(true); }} style={{ background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)', padding: 8, borderRadius: 8, cursor: 'pointer', transition: '0.2s' }} onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'} onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'} title="Edit">
+                                                <Edit2 size={16} />
+                                            </button>
+                                            <button onClick={() => setDeleteId(ann.id)} style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)', padding: 8, borderRadius: 8, cursor: 'pointer', transition: '0.2s' }} onMouseOver={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'} onMouseOut={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'} title="Delete">
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
+            </div>
+
+            <Drawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} title={editingAnn ? 'Edit Announcement' : 'New Announcement'}>
+                <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                    <div>
+                        <label style={{ display: 'block', marginBottom: 8, fontSize: 14, fontWeight: 500, color: '#a1a1aa' }}>Title</label>
+                        <input name="title" defaultValue={editingAnn?.title} required style={{ width: '100%', padding: '12px 16px', background: 'rgba(0,0,0,0.2)', border: '1px solid #3f3f46', borderRadius: 10, color: '#fff', fontSize: 15, outline: 'none', transition: '0.2s', boxSizing: 'border-box' }} onFocus={e => e.currentTarget.style.borderColor = '#10b981'} onBlur={e => e.currentTarget.style.borderColor = '#3f3f46'} />
+                    </div>
+                    <div>
+                        <label style={{ display: 'block', marginBottom: 8, fontSize: 14, fontWeight: 500, color: '#a1a1aa' }}>Content (HTML allowed)</label>
+                        <textarea name="content" defaultValue={editingAnn?.content} required rows={6} style={{ width: '100%', padding: '12px 16px', background: 'rgba(0,0,0,0.2)', border: '1px solid #3f3f46', borderRadius: 10, color: '#fff', fontSize: 15, outline: 'none', transition: '0.2s', boxSizing: 'border-box', resize: 'vertical' }} onFocus={e => e.currentTarget.style.borderColor = '#10b981'} onBlur={e => e.currentTarget.style.borderColor = '#3f3f46'} />
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <input type="checkbox" name="is_active" id="is_active" defaultChecked={editingAnn ? editingAnn.is_active == 1 : true} style={{ width: 18, height: 18, accentColor: '#10b981' }} />
+                        <label htmlFor="is_active" style={{ fontSize: 14, color: '#fff', cursor: 'pointer' }}>Show on homepage</label>
+                    </div>
+                    <div style={{ marginTop: 10 }}>
+                        <button type="submit" style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: '#fff', border: 'none', borderRadius: 10, cursor: 'pointer', fontWeight: 600, fontSize: 15, transition: '0.2s', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)' }} onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'} onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}>
+                            {editingAnn ? 'Save Changes' : 'Add Announcement'}
+                        </button>
+                    </div>
+                </form>
+            </Drawer>
+
+            <Modal isOpen={!!deleteId} onClose={() => setDeleteId(null)} title="Delete Announcement" message="Are you sure you want to delete this announcement? This action cannot be undone." onConfirm={handleDelete} confirmText="Delete" isDestructive={true} />
+        </div>
+    );
+}
+
 export default function AdminApp() {
     const [token, setToken] = useState(localStorage.getItem('admin_token') || '');
 
@@ -2229,6 +2429,7 @@ export default function AdminApp() {
                         <Route path="/" element={<DashboardView token={token} onLogout={handleLogout} />} />
                         <Route path="releases" element={<ReleasesView token={token} onLogout={handleLogout} />} />
                         <Route path="subscribers" element={<SubscribersView token={token} onLogout={handleLogout} />} />
+                        <Route path="announcements" element={<AnnouncementsView token={token} onLogout={handleLogout} />} />
                         <Route path="home" element={<EditHomeView token={token} onLogout={handleLogout} />} />
                         <Route path="password" element={<ChangePasswordView token={token} setToken={handleLogin} />} />
                     </Routes>
