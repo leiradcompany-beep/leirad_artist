@@ -173,21 +173,13 @@ export default function Home() {
             {data.announcements && data.announcements.length > 0 && (
                 <div className="announcements-section">
                     <h2 className="announcements-title">Latest Updates</h2>
-                    <div className="announcements-list">
-                        {data.announcements.map(ann => (
-                            <div key={ann.id} className="announcement-card">
-                                <div className="announcement-header">
-                                    <h3>{ann.title}</h3>
-                                    <span className="announcement-date">
-                                        {new Date(ann.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
-                                    </span>
-                                </div>
-                                <div 
-                                    className="announcement-content" 
-                                    dangerouslySetInnerHTML={{ __html: ann.content }} 
-                                />
-                            </div>
-                        ))}
+                    <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                        <a 
+                            href="/announcements" 
+                            className="view-announcements-btn"
+                        >
+                            View All Announcements →
+                        </a>
                     </div>
                 </div>
             )}
@@ -637,63 +629,23 @@ export default function Home() {
                     text-align: center;
                 }
                 
-                .announcements-list {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 20px;
-                }
-                
-                .announcement-card {
-                    background: rgba(255, 255, 255, 0.05);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                    border-radius: 16px;
-                    padding: 24px;
-                    backdrop-filter: blur(10px);
-                    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-                }
-                
-                .announcement-header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    margin-bottom: 15px;
-                    flex-wrap: wrap;
-                    gap: 10px;
-                }
-                
-                .announcement-header h3 {
-                    margin: 0;
-                    font-size: 20px;
+                .view-announcements-btn {
+                    display: inline-block;
+                    padding: 12px 28px;
+                    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
                     color: #fff;
-                }
-                
-                .announcement-date {
-                    font-size: 14px;
-                    color: #10b981;
-                    font-weight: 500;
-                    background: rgba(16, 185, 129, 0.1);
-                    padding: 4px 12px;
-                    border-radius: 20px;
-                }
-                
-                .announcement-content {
-                    font-size: 15px;
-                    line-height: 1.6;
-                    color: rgba(255, 255, 255, 0.8);
-                }
-                
-                .announcement-content p {
-                    margin: 0 0 10px 0;
-                }
-                .announcement-content p:last-child {
-                    margin-bottom: 0;
-                }
-                .announcement-content a {
-                    color: #10b981;
                     text-decoration: none;
+                    font-size: 16px;
+                    font-weight: 600;
+                    border-radius: 30px;
+                    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+                    transition: all 0.3s ease;
                 }
-                .announcement-content a:hover {
-                    text-decoration: underline;
+                
+                .view-announcements-btn:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+                    color: #fff;
                 }
                 
                 /* Pagination Styles */
