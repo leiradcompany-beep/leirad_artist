@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './Home.jsx';
+import Announcements from './Announcements.jsx';
 import Preloader from './Preloader.jsx';
 import './index.css';
 import { 
@@ -57,7 +59,10 @@ function App() {
     ];
 
     useEffect(() => {
-        if (!shortcode) return; 
+        if (!shortcode) {
+            setLoading(false);
+            return;
+        }
 
         fetch(`${API_BASE_URL}/get_release.php?s=${shortcode}`)
             .then(res => res.json())
@@ -132,7 +137,16 @@ function App() {
         }
     };
 
-    if (!shortcode) return <Home />;
+    if (!shortcode) {
+        return (
+            <Router>
+                <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/announcements" element={<Announcements />} />
+                </Routes>
+            </Router>
+        );
+    }
 
     if (loading) return <Preloader />;
 
