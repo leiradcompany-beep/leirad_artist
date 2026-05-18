@@ -1,8 +1,48 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Preloader from './Preloader.jsx';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { API_BASE_URL } from './config.js';
+
+const AnnouncementCard = ({ ann, isExpanded, toggleExpand }) => {
+    const contentRef = useRef(null);
+    const [isOverflowing, setIsOverflowing] = useState(false);
+
+    useEffect(() => {
+        if (contentRef.current) {
+            // Check if content is taller than the max-height (80px)
+            if (contentRef.current.scrollHeight > 80) {
+                // eslint-disable-next-line react-hooks/set-state-in-effect
+                setIsOverflowing(true);
+            }
+        }
+    }, [ann.content]);
+
+    return (
+        <div 
+            className={`announcement-card ${isExpanded ? 'expanded' : ''} ${isOverflowing ? 'has-overflow' : ''}`}
+            onClick={() => isOverflowing && toggleExpand(ann.id)}
+            style={{ cursor: isOverflowing ? 'pointer' : 'default' }}
+        >
+            <div className="announcement-header">
+                <h3>{ann.title}</h3>
+                <span className="announcement-date">
+                    {new Date(ann.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                </span>
+            </div>
+            <div 
+                ref={contentRef}
+                className="announcement-content" 
+                dangerouslySetInnerHTML={{ __html: ann.content }} 
+            />
+            {isOverflowing && (
+                <div className="expand-indicator">
+                    {isExpanded ? 'Show less ↑' : 'Read more ↓'}
+                </div>
+            )}
+        </div>
+    );
+};
 
 export default function Announcements() {
     const [data, setData] = useState(null);
@@ -112,30 +152,14 @@ export default function Announcements() {
                             No new updates at this time. Check back later!
                         </div>
                     ) : (
-                        announcements.map(ann => {
-                            const isExpanded = expandedCards[ann.id];
-                            return (
-                                <div 
-                                    key={ann.id} 
-                                    className={`announcement-card ${isExpanded ? 'expanded' : ''}`}
-                                    onClick={() => toggleExpand(ann.id)}
-                                >
-                                    <div className="announcement-header">
-                                        <h3>{ann.title}</h3>
-                                        <span className="announcement-date">
-                                            {new Date(ann.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
-                                        </span>
-                                    </div>
-                                    <div 
-                                        className="announcement-content" 
-                                        dangerouslySetInnerHTML={{ __html: ann.content }} 
-                                    />
-                                    <div className="expand-indicator">
-                                        {isExpanded ? 'Show less ↑' : 'Read more ↓'}
-                                    </div>
-                                </div>
-                            );
-                        })
+                        announcements.map(ann => (
+                            <AnnouncementCard 
+                                key={ann.id}
+                                ann={ann}
+                                isExpanded={expandedCards[ann.id]}
+                                toggleExpand={toggleExpand}
+                            />
+                        ))
                     )}
                 </div>
             </div>
@@ -216,19 +240,15 @@ export default function Announcements() {
                     transition: max-height 0.5s ease;
                 }
                 
-                .announcement-card:not(.expanded) .announcement-content::after {
-                    content: '';
-                    position: absolute;
-                    bottom: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 50px;
-                    background: linear-gradient(transparent, rgba(24, 24, 27, 0.9));
-                    pointer-events: none;
+                .announcement-card.has-overflow:not(.expanded) .announcement-content {
+                    mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+                    -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
                 }
 
-                .announcement-card.expanded .announcement-content {
+                .announcement-card.has-overflow.expanded .announcement-content {
                     max-height: 2000px; /* Arbitrary large number to allow full expansion */
+                    mask-image: none;
+                    -webkit-mask-image: none;
                 }
                 
                 .expand-indicator {
