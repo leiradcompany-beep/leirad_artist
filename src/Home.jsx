@@ -628,6 +628,7 @@ export default function Home() {
                     font-weight: 700;
                     margin-bottom: 20px;
                     text-align: center;
+                    color: #ffffff;
                 }
                 
                 .view-announcements-btn {
