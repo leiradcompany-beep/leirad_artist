@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import Preloader from './Preloader.jsx';
+import { Link } from 'react-router-dom';
 import { 
     FaFacebook, 
     FaTiktok, 
@@ -171,15 +172,15 @@ export default function Home() {
 
             {/* Announcements Section */}
             {data.announcements && data.announcements.length > 0 && (
-                <div className="announcements-section">
+                <div className="announcements-section" style={{ position: 'relative', zIndex: 10 }}>
                     <h2 className="announcements-title">Latest Updates</h2>
-                    <div style={{ textAlign: 'center', marginBottom: '20px', zIndex: 10, position: 'relative' }}>
-                        <a 
-                            href="/announcements" 
+                    <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                        <Link 
+                            to="/announcements" 
                             className="view-announcements-btn"
                         >
                             View All Announcements →
-                        </a>
+                        </Link>
                     </div>
                 </div>
             )}
@@ -620,8 +621,6 @@ export default function Home() {
                     max-width: 1000px;
                     margin: 0 auto 40px auto;
                     padding: 0 20px;
-                    position: relative;
-                    z-index: 10;
                 }
                 
                 .announcements-title {
