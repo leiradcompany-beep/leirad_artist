@@ -124,6 +124,7 @@ function Login({ setToken }) {
     const [isLoading, setIsLoading] = useState(false);
     const [bgUrl, setBgUrl] = useState('');
     const [turnstileToken, setTurnstileToken] = useState('');
+    const [turnstileKey, setTurnstileKey] = useState(0);
     
     // OTP State
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -254,11 +255,15 @@ function Login({ setToken }) {
                 
                 toast.error(errorMsg, { duration: 5000 });
                 setIsLoading(false);
+                setTurnstileToken('');
+                setTurnstileKey(prev => prev + 1);
             }
         } catch (err) {
             console.error('Login error:', err);
             toast.error('Login failed. Check backend configuration.');
             setIsLoading(false);
+            setTurnstileToken('');
+            setTurnstileKey(prev => prev + 1);
         }
     };
 
@@ -433,6 +438,7 @@ function Login({ setToken }) {
                     />
                     <div style={{ marginBottom: 20, display: 'flex', justifyContent: 'center' }}>
                         <Turnstile 
+                            key={turnstileKey}
                             siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY} 
                             onSuccess={(token) => setTurnstileToken(token)} 
                             options={{ theme: 'dark' }}
