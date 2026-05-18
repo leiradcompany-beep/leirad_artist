@@ -173,7 +173,7 @@ export default function Home() {
             {data.announcements && data.announcements.length > 0 && (
                 <div className="announcements-section">
                     <h2 className="announcements-title">Latest Updates</h2>
-                    <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                    <div style={{ textAlign: 'center', marginBottom: '20px', zIndex: 10, position: 'relative' }}>
                         <a 
                             href="/announcements" 
                             className="view-announcements-btn"
@@ -620,6 +620,8 @@ export default function Home() {
                     max-width: 1000px;
                     margin: 0 auto 40px auto;
                     padding: 0 20px;
+                    position: relative;
+                    z-index: 10;
                 }
                 
                 .announcements-title {
