@@ -627,36 +627,144 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'analytics') {
     $stmt = $pdo->query("SELECT COUNT(*) as total_subscribers FROM subscribers");
     $total_subscribers = $stmt->fetch(PDO::FETCH_ASSOC)['total_subscribers'];
 
-    // Generate mock time-series data for the charts (e.g., last 30 days)
-    // Since we don't have actual tracking tables, we return realistic-looking data.
-    $activity_data = [];
-    $current_time = time();
-    for ($i = 29; $i >= 0; $i--) {
-        $date = date('M d', $current_time - ($i * 86400));
-        // Add some random variation
-        $visitors = rand(100, 500) + ($i % 5) * 50;
-        $streams = rand(500, 2000) + ($i % 7) * 100;
-        $activity_data[] = [
-            'date' => $date,
-            'visitors' => $visitors,
-            'streams' => $streams
+    // Real platform click counts
+    $platform_colors = [
+        'Spotify' => '#1DB954',
+        'Apple Music' => '#FA243C',
+        'YouTube Music' => '#FF0000',
+        'YouTube' => '#FF0000',
+        'Amazon Music' => '#FF9900',
+        'Tidal' => '#000000',
+        'Deezer' => '#ef5466',
+        'SoundCloud' => '#ff5500',
+        'iTunes' => '#FA243C',
+    ];
+
+    $stmt = $pdo->query("SELECT platform_name, COUNT(*) as clicks FROM link_clicks GROUP BY platform_name ORDER BY clicks DESC");
+    $raw_sources = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    $traffic_sources = [];
+    $total_clicks = 0;
+    foreach ($raw_sources as $s) {
+        $name = $s['platform_name'];
+        $fill = $platform_colors[$name] ?? '#a1a1aa';
+        $traffic_sources[] = [
+            'name' => $name,
+            'value' => (int)$s['clicks'],
+            'fill' => $fill
         ];
+        $total_clicks += (int)$s['clicks'];
     }
 
-    $traffic_sources = [
-        ['name' => 'Spotify', 'value' => rand(40, 60), 'fill' => '#1DB954'],
-        ['name' => 'Apple Music', 'value' => rand(15, 30), 'fill' => '#FA243C'],
-        ['name' => 'YouTube', 'value' => rand(10, 25), 'fill' => '#FF0000'],
-        ['name' => 'Direct', 'value' => rand(5, 15), 'fill' => '#10b981'],
-    ];
+    // Time-series data: total clicks per day for last 30 days
+    $stmt = $pdo->query("SELECT DATE(clicked_at) as date, COUNT(*) as clicks FROM link_clicks WHERE clicked_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) GROUP BY DATE(clicked_at) ORDER BY date ASC");
+    $raw_activity = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Build a full 30-day map with zeros for missing days
+    $activity_map = [];
+    foreach ($raw_activity as $row) {
+        $activity_map[$row['date']] = (int)$row['clicks'];
+    }
+    
+    $activity_data = [];
+    for ($i = 29; $i >= 0; $i--) {
+        $date_obj = new DateTime();
+        $date_obj->modify("-{$i} days");
+        $date_key = $date_obj->format('Y-m-d');
+        $date_label = $date_obj->format('M d');
+        $clicks = $activity_map[$date_key] ?? 0;
+        $activity_data[] = [
+            'date' => $date_label,
+            'clicks' => $clicks,
+            'visitors' => $clicks // alias for chart compatibility
+        ];
+    }
 
     echo json_encode([
         "success" => true,
         "data" => [
             "total_releases" => $total_releases,
             "total_subscribers" => $total_subscribers,
+            "total_clicks" => $total_clicks,
             "activity" => $activity_data,
             "sources" => $traffic_sources
+        ]
+    ]);
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'click_details') {
+    $release_id = isset($_GET['release_id']) ? (int)$_GET['release_id'] : 0;
+    $limit = isset($_GET['limit']) ? min((int)$_GET['limit'], 100) : 50;
+    $offset = isset($_GET['offset']) ? (int)$_GET['offset'] : 0;
+    
+    $where_clause = "";
+    $params = [];
+    
+    if ($release_id > 0) {
+        $where_clause = "WHERE release_id = ?";
+        $params[] = $release_id;
+    }
+    
+    // Get detailed click information
+    $stmt = $pdo->prepare("
+        SELECT lc.id, lc.release_id, lc.platform_name, lc.clicked_at, lc.ip_address,
+               r.title as release_title, r.artist as release_artist
+        FROM link_clicks lc
+        LEFT JOIN releases r ON lc.release_id = r.id
+        $where_clause
+        ORDER BY lc.clicked_at DESC
+        LIMIT ? OFFSET ?
+    ");
+    
+    $params[] = $limit;
+    $params[] = $offset;
+    $stmt->execute($params);
+    $clicks = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Get total count for pagination
+    $count_stmt = $pdo->prepare("SELECT COUNT(*) as total FROM link_clicks $where_clause");
+    $count_params = array_slice($params, 0, count($params) - 2);
+    $count_stmt->execute($count_params);
+    $total_count = $count_stmt->fetch(PDO::FETCH_ASSOC)['total'];
+    
+    // Get platform breakdown for the specified release or all releases
+    $platform_stmt = $pdo->prepare("
+        SELECT platform_name, COUNT(*) as clicks, 
+               COUNT(DISTINCT ip_address) as unique_visitors
+        FROM link_clicks
+        $where_clause
+        GROUP BY platform_name
+        ORDER BY clicks DESC
+    ");
+    $platform_stmt->execute($count_params);
+    $platform_breakdown = $platform_stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Get daily breakdown for last 30 days
+    $daily_stmt = $pdo->prepare("
+        SELECT DATE(clicked_at) as date, COUNT(*) as clicks,
+               COUNT(DISTINCT ip_address) as unique_visitors
+        FROM link_clicks
+        $where_clause
+        AND clicked_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+        GROUP BY DATE(clicked_at)
+        ORDER BY date DESC
+    ");
+    $daily_stmt->execute($count_params);
+    $daily_breakdown = $daily_stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    echo json_encode([
+        "success" => true,
+        "data" => [
+            "clicks" => $clicks,
+            "total_count" => (int)$total_count,
+            "platform_breakdown" => $platform_breakdown,
+            "daily_breakdown" => $daily_breakdown,
+            "pagination" => [
+                "limit" => $limit,
+                "offset" => $offset,
+                "has_more" => ($offset + $limit) < $total_count
+            ]
         ]
     ]);
     exit;
@@ -672,6 +780,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'list') {
         if ($r['cover_image_path']) {
             $r['full_cover_url'] = $baseUrl . $r['cover_image_path'];
         }
+    }
+    
+    // Attach total click counts per release
+    $click_stmt = $pdo->query("SELECT release_id, COUNT(*) as total_clicks FROM link_clicks GROUP BY release_id");
+    $click_counts = [];
+    while ($row = $click_stmt->fetch(PDO::FETCH_ASSOC)) {
+        $click_counts[$row['release_id']] = (int)$row['total_clicks'];
+    }
+    foreach($releases as &$r) {
+        $r['total_clicks'] = $click_counts[$r['id']] ?? 0;
     }
     
     echo json_encode(["success" => true, "data" => $releases]);
@@ -706,6 +824,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save') {
     $title = $_POST['title'] ?? '';
     $artist = $_POST['artist'] ?? '';
     $spotify_embed = $_POST['spotify_embed'] ?? '';
+    $stream_count = $_POST['stream_count'] ?? '';
+    
     $isNew = !$id;
     
     // File upload
@@ -728,13 +848,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save') {
     }
 
     if ($id) {
-        $stmt = $pdo->prepare("UPDATE releases SET title = ?, artist = ?, cover_image_path = ?, spotify_embed = ? WHERE id = ?");
-        $stmt->execute([$title, $artist, $cover_image_path, $spotify_embed, $id]);
+        $stmt = $pdo->prepare("UPDATE releases SET title = ?, artist = ?, cover_image_path = ?, spotify_embed = ?, stream_count = ? WHERE id = ?");
+        $stmt->execute([$title, $artist, $cover_image_path, $spotify_embed, $stream_count, $id]);
         $release_id = $id;
     } else {
         $shortcode = substr(md5(uniqid(rand(), true)), 0, 8);
-        $stmt = $pdo->prepare("INSERT INTO releases (title, artist, cover_image_path, shortcode, spotify_embed) VALUES (?, ?, ?, ?, ?)");
-        $stmt->execute([$title, $artist, $cover_image_path, $shortcode, $spotify_embed]);
+        $stmt = $pdo->prepare("INSERT INTO releases (title, artist, cover_image_path, shortcode, spotify_embed, stream_count) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$title, $artist, $cover_image_path, $shortcode, $spotify_embed, $stream_count]);
         $release_id = $pdo->lastInsertId();
     }
 
@@ -1043,6 +1163,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'get_home') {
         $baseUrl = "https://blandolms.ccsblock2.com/";
         $home['full_bg_url'] = $home['background_image_path'] ? $baseUrl . $home['background_image_path'] : '';
         $home['full_profile_url'] = $home['profile_image_path'] ? $baseUrl . $home['profile_image_path'] : '';
+        $home['full_about_me_image_url'] = $home['about_me_image_path'] ? $baseUrl . $home['about_me_image_path'] : '';
         echo json_encode(["success" => true, "data" => $home]);
     } else {
         echo json_encode(["error" => "Not found"]);
@@ -1054,12 +1175,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save_home') {
     $artist_name = $_POST['artist_name'] ?? '';
     $hero_title = $_POST['hero_title'] ?? '';
     $hero_subtitle = $_POST['hero_subtitle'] ?? '';
+    $about_me_title = $_POST['about_me_title'] ?? '';
+    $about_me_content = $_POST['about_me_content'] ?? '';
 
     $stmt = $pdo->query("SELECT * FROM homepage LIMIT 1");
     $home = $stmt->fetch(PDO::FETCH_ASSOC);
     
     $bg_path = $home['background_image_path'] ?? '';
     $profile_path = $home['profile_image_path'] ?? '';
+    $about_me_image_path = $home['about_me_image_path'] ?? '';
 
     $upload_dir = __DIR__ . '/../public/uploads';
     if (!file_exists($upload_dir)) mkdir($upload_dir, 0777, true);
@@ -1080,12 +1204,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save_home') {
         }
     }
 
+    if (isset($_FILES['about_me_image']) && $_FILES['about_me_image']['error'] === UPLOAD_ERR_OK) {
+        $ext = pathinfo($_FILES['about_me_image']['name'], PATHINFO_EXTENSION);
+        $new_name = uniqid('aboutme_') . '.' . $ext;
+        if (move_uploaded_file($_FILES['about_me_image']['tmp_name'], $upload_dir . '/' . $new_name)) {
+            $about_me_image_path = 'backend/public/uploads/' . $new_name;
+        }
+    }
+
     if ($home) {
-        $stmt = $pdo->prepare("UPDATE homepage SET artist_name = ?, hero_title = ?, hero_subtitle = ?, background_image_path = ?, profile_image_path = ? WHERE id = ?");
-        $stmt->execute([$artist_name, $hero_title, $hero_subtitle, $bg_path, $profile_path, $home['id']]);
+        $stmt = $pdo->prepare("UPDATE homepage SET artist_name = ?, hero_title = ?, hero_subtitle = ?, background_image_path = ?, profile_image_path = ?, about_me_title = ?, about_me_content = ?, about_me_image_path = ? WHERE id = ?");
+        $stmt->execute([$artist_name, $hero_title, $hero_subtitle, $bg_path, $profile_path, $about_me_title, $about_me_content, $about_me_image_path, $home['id']]);
     } else {
-        $stmt = $pdo->prepare("INSERT INTO homepage (artist_name, hero_title, hero_subtitle, background_image_path, profile_image_path) VALUES (?, ?, ?, ?, ?)");
-        $stmt->execute([$artist_name, $hero_title, $hero_subtitle, $bg_path, $profile_path]);
+        $stmt = $pdo->prepare("INSERT INTO homepage (artist_name, hero_title, hero_subtitle, background_image_path, profile_image_path, about_me_title, about_me_content, about_me_image_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$artist_name, $hero_title, $hero_subtitle, $bg_path, $profile_path, $about_me_title, $about_me_content, $about_me_image_path]);
     }
 
     echo json_encode(["success" => true]);
@@ -1232,5 +1364,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'get_admin_email') {
     } else {
         echo json_encode(["success" => false, "email" => null]);
     }
+    exit;
+}
+
+// Announcements API
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'get_announcements') {
+    $stmt = $pdo->query("SELECT * FROM announcements ORDER BY created_at DESC");
+    echo json_encode(["success" => true, "data" => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add_announcement') {
+    $title = $_POST['title'] ?? '';
+    $content = $_POST['content'] ?? '';
+    $is_active = isset($_POST['is_active']) ? (int)$_POST['is_active'] : 1;
+    
+    if (empty($title) || empty($content)) {
+        http_response_code(400);
+        echo json_encode(["success" => false, "error" => "Title and content are required"]);
+        exit;
+    }
+    
+    $stmt = $pdo->prepare("INSERT INTO announcements (title, content, is_active) VALUES (?, ?, ?)");
+    $stmt->execute([$title, $content, $is_active]);
+    echo json_encode(["success" => true, "message" => "Announcement added"]);
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'update_announcement') {
+    $id = $_POST['id'] ?? 0;
+    $title = $_POST['title'] ?? '';
+    $content = $_POST['content'] ?? '';
+    $is_active = isset($_POST['is_active']) ? (int)$_POST['is_active'] : 1;
+    
+    if (empty($id) || empty($title) || empty($content)) {
+        http_response_code(400);
+        echo json_encode(["success" => false, "error" => "ID, title, and content are required"]);
+        exit;
+    }
+    
+    $stmt = $pdo->prepare("UPDATE announcements SET title = ?, content = ?, is_active = ? WHERE id = ?");
+    $stmt->execute([$title, $content, $is_active, $id]);
+    echo json_encode(["success" => true, "message" => "Announcement updated"]);
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'delete_announcement') {
+    $id = $_POST['id'] ?? 0;
+    
+    if (empty($id)) {
+        http_response_code(400);
+        echo json_encode(["success" => false, "error" => "ID is required"]);
+        exit;
+    }
+    
+    $stmt = $pdo->prepare("DELETE FROM announcements WHERE id = ?");
+    $stmt->execute([$id]);
+    echo json_encode(["success" => true, "message" => "Announcement deleted"]);
     exit;
 }

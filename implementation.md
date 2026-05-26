@@ -8,6 +8,8 @@
 - The Admin Login OTP step must be presented as a popup modal over the main login screen rather than replacing it entirely, maintaining context.
 - The OTP modal must display an accurate real-time countdown timer to visualize expiration.
 - The Admin Sidebar must be redesigned for a professional layout, ensuring correct arrangement, spacing, and visual hierarchy.
+- **Release Page Subscribe Modal**: Replace the inline subscription form on the releases page (`App.jsx`) with a modern, clean popup modal. The page will display a call-to-action button that triggers the modal, which will contain the email input, Turnstile, and subscribe actions along with a close button.
+- **Stream Count Management**: Implement an admin interface to manage the stream counts for each release, store it in the database (`releases` table), and display it on the public releases pages (`App.jsx`, `Home.jsx`).
 
 ## Architectural Decisions and Design Rationale
 - **Analytics Dashboard**: We will use `recharts` for the interactive visualizations (LineChart, BarChart, PieChart). Data will include total subscribers, releases, and generated mock analytics data (since deep tracking DB isn't present, we'll provide mock data payload from the API representing real-world user activity, streaming numbers, and traffic sources) to fulfill the visualization requirement.

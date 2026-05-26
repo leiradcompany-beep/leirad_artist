@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Click Tracking Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-section h2 {
+            margin-top: 0;
+            color: #555;
+        }
+        button {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #059669;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+        .info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #3b82f6;
+        }
+        input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 5px;
+            width: 200px;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status-working {
+            background: #10b981;
+            color: white;
+        }
+        .status-failed {
+            background: #ef4444;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Click Tracking Test Tool</h1>
+        <p>This tool helps test the click tracking functionality and diagnose issues.</p>
+
+        <!-- API Configuration -->
+        <div class="test-section">
+            <h2>🔧 API Configuration</h2>
+            <div>
+                <label>API Base URL:</label>
+                <input type="text" id="apiBaseUrl" value="https://blandolms.ccsblock2.com/backend/api" placeholder="Enter API base URL">
+                <button onclick="testConnection()">Test Connection</button>
+            </div>
+            <div id="connectionResult" class="result info"></div>
+        </div>
+
+        <!-- Click Tracking Test -->
+        <div class="test-section">
+            <h2>🖱️ Click Tracking Test</h2>
+            <div>
+                <label>Release ID:</label>
+                <input type="number" id="releaseId" value="1" placeholder="Enter release ID">
+                <label>Platform Name:</label>
+                <input type="text" id="platformName" value="Spotify" placeholder="Enter platform name">
+                <button onclick="testClickTracking()">Test Click Tracking</button>
+                <button onclick="testMultipleClicks()">Test 5 Clicks</button>
+            </div>
+            <div id="clickResult" class="result info"></div>
+        </div>
+
+        <!-- sendBeacon Test -->
+        <div class="test-section">
+            <h2>📡 sendBeacon Test</h2>
+            <div>
+                <button onclick="testSendBeacon()">Test sendBeacon</button>
+                <span id="beaconStatus" class="status">Not tested</span>
+            </div>
+            <div id="beaconResult" class="result info"></div>
+        </div>
+
+        <!-- CORS Test -->
+        <div class="test-section">
+            <h2>🌐 CORS Test</h2>
+            <div>
+                <button onclick="testCORS()">Test CORS Headers</button>
+            </div>
+            <div id="corsResult" class="result info"></div>
+        </div>
+
+        <!-- Database Check -->
+        <div class="test-section">
+            <h2>💾 Database Status</h2>
+            <div>
+                <button onclick="checkDatabase()">Check Database Tables</button>
+            </div>
+            <div id="databaseResult" class="result info"></div>
+        </div>
+
+        <!-- Real-time Test -->
+        <div class="test-section">
+            <h2>⚡ Real-time Click Test</h2>
+            <p>Click the button below to simulate a real user click:</p>
+            <button onclick="simulateRealClick()" style="background: #3b82f6; font-size: 16px; padding: 15px 30px;">
+                🎵 Click to Open Spotify (Test)
+            </button>
+            <div id="realClickResult" class="result info"></div>
+        </div>
+
+        <!-- Diagnostic Info -->
+        <div class="test-section">
+            <h2>🔍 Diagnostic Information</h2>
+            <button onclick="showDiagnostics()">Show Diagnostics</button>
+            <div id="diagnosticsResult" class="result info"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = document.getElementById('apiBaseUrl').value;
+
+        function updateResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `result ${type}`;
+        }
+
+        async function testConnection() {
+            const baseUrl = document.getElementById('apiBaseUrl').value;
+            updateResult('connectionResult', 'Testing connection...', 'info');
+            
+            try {
+                const response = await fetch(`${baseUrl}/get_home.php`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateResult('connectionResult', 
+                        `✅ Connection successful!\n\nResponse: ${JSON.stringify(data, null, 2)}`, 
+                        'success'
+                    );
+                } else {
+                    updateResult('connectionResult', 
+                        `⚠️ Connection successful but API returned error:\n${JSON.stringify(data, null, 2)}`, 
+                        'error'
+                    );
+                }
+            } catch (error) {
+                updateResult('connectionResult', 
+                    `❌ Connection failed:\n${error.message}\n\nMake sure the API URL is correct and the server is running.`, 
+                    'error'
+                );
+            }
+        }
+
+        async function testClickTracking() {
+            const baseUrl = document.getElementById('apiBaseUrl').value;
+            const releaseId = document.getElementById('releaseId').value;
+            const platformName = document.getElementById('platformName').value;
+            
+            updateResult('clickResult', 'Testing click tracking...', 'info');
+            
+            try {
+                const response = await fetch(`${baseUrl}/track_click.php`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        release_id: parseInt(releaseId),
+                        platform_name: platformName
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateResult('clickResult', 
+                        `✅ Click tracking successful!\n\nResponse: ${JSON.stringify(data, null, 2)}\n\nClick ID: ${data.click_id}`, 
+                        'success'
+                    );
+                } else {
+                    updateResult('clickResult', 
+                        `❌ Click tracking failed:\n${JSON.stringify(data, null, 2)}`, 
+                        'error'
+                    );
+                }
+            } catch (error) {
+                updateResult('clickResult', 
+                    `❌ Request failed:\n${error.message}\n\nPossible causes:\n- CORS issue\n- Network error\n- Server not responding`, 
+                    'error'
+                );
+            }
+        }
+
+        async function testMultipleClicks() {
+            const baseUrl = document.getElementById('apiBaseUrl').value;
+            const releaseId = document.getElementById('releaseId').value;
+            const platforms = ['Spotify', 'Apple Music', 'YouTube Music', 'Amazon Music', 'Deezer'];
+            
+            updateResult('clickResult', 'Testing 5 clicks...', 'info');
+            
+            let results = [];
+            for (let i = 0; i < 5; i++) {
+                try {
+                    const response = await fetch(`${baseUrl}/track_click.php`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            release_id: parseInt(releaseId),
+                            platform_name: platforms[i]
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    results.push({
+                        platform: platforms[i],
+                        success: data.success,
+                        click_id: data.click_id,
+                        status: response.status
+                    });
+                    
+                    // Small delay between requests
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                } catch (error) {
+                    results.push({
+                        platform: platforms[i],
+                        success: false,
+                        error: error.message
+                    });
+                }
+            }
+            
+            const successCount = results.filter(r => r.success).length;
+            updateResult('clickResult', 
+                `📊 Test Results: ${successCount}/5 successful\n\n${JSON.stringify(results, null, 2)}`, 
+                successCount === 5 ? 'success' : 'error'
+            );
+        }
+
+        function testSendBeacon() {
+            const baseUrl = document.getElementById('apiBaseUrl').value;
+            const releaseId = document.getElementById('releaseId').value;
+            const platformName = document.getElementById('platformName').value;
+            
+            const trackData = JSON.stringify({
+                release_id: parseInt(releaseId),
+                platform_name: platformName
+            });
+            
+            const statusElement = document.getElementById('beaconStatus');
+            
+            try {
+                const result = navigator.sendBeacon(
+                    `${baseUrl}/track_click.php`,
+                    new Blob([trackData], { type: 'application/json' })
+                );
+                
+                if (result) {
+                    statusElement.textContent = 'Working ✅';
+                    statusElement.className = 'status status-working';
+                    updateResult('beaconResult', 
+                        `✅ sendBeacon is supported and working!\n\nData sent: ${trackData}`, 
+                        'success'
+                    );
+                } else {
+                    statusElement.textContent = 'Failed ❌';
+                    statusElement.className = 'status status-failed';
+                    updateResult('beaconResult', 
+                        `❌ sendBeacon returned false\n\nThis might be due to:\n- Data size too large\n- Browser restrictions\n- Network issues`, 
+                        'error'
+                    );
+                }
+            } catch (error) {
+                statusElement.textContent = 'Error ❌';
+                statusElement.className = 'status status-failed';
+                updateResult('beaconResult', 
+                    `❌ sendBeacon error:\n${error.message}\n\nsendBeacon might not be supported in this browser.`, 
+                    'error'
+                );
+            }
+        }
+
+        async function testCORS() {
+            const baseUrl = document.getElementById('apiBaseUrl').value;
+            updateResult('corsResult', 'Testing CORS headers...', 'info');
+            
+            try {
+                const response = await fetch(`${baseUrl}/track_click.php`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Origin': window.location.origin
+                    }
+                });
+                
+                const corsHeaders = {
+                    'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
+                    'Access-Control-Allow-Methods': response.headers.get('Access-Control-Allow-Methods'),
+                    'Access-Control-Allow-Headers': response.headers.get('Access-Control-Allow-Headers'),
+                    'Access-Control-Allow-Credentials': response.headers.get('Access-Control-Allow-Credentials')
+                };
+                
+                updateResult('corsResult', 
+                    `✅ CORS Headers:\n\n${JSON.stringify(corsHeaders, null, 2)}\n\nStatus: ${response.status}`, 
+                    'success'
+                );
+            } catch (error) {
+                updateResult('corsResult', 
+                    `❌ CORS test failed:\n${error.message}\n\nThis indicates a CORS configuration issue.`, 
+                    'error'
+                );
+            }
+        }
+
+        async function checkDatabase() {
+            const baseUrl = document.getElementById('apiBaseUrl').value;
+            updateResult('databaseResult', 'Checking database status...', 'info');
+            
+            try {
+                // This would require a backend endpoint to check database status
+                // For now, we'll show a message
+                updateResult('databaseResult', 
+                    `ℹ️ Database check requires backend endpoint.\n\nTo check database manually:\n1. Access your database admin panel\n2. Run: SELECT COUNT(*) FROM link_clicks;\n3. Run: SELECT * FROM link_clicks ORDER BY clicked_at DESC LIMIT 5;`, 
+                    'info'
+                );
+            } catch (error) {
+                updateResult('databaseResult', 
+                    `❌ Database check failed:\n${error.message}`, 
+                    'error'
+                );
+            }
+        }
+
+        function simulateRealClick() {
+            const baseUrl = document.getElementById('apiBaseUrl').value;
+            const releaseId = document.getElementById('releaseId').value;
+            const platformName = document.getElementById('platformName').value;
+            
+            updateResult('realClickResult', 'Simulating real click...', 'info');
+            
+            const trackData = JSON.stringify({
+                release_id: parseInt(releaseId),
+                platform_name: platformName
+            });
+            
+            const openLink = () => {
+                // Open Spotify in new tab
+                window.open('https://open.spotify.com/', '_blank', 'noopener,noreferrer');
+            };
+            
+            let tracked = false;
+            let trackingFailed = false;
+            
+            const doOpen = () => {
+                if (!tracked) {
+                    tracked = true;
+                    openLink();
+                    if (trackingFailed) {
+                        updateResult('realClickResult', 
+                            `⚠️ Link opened but tracking failed\n\nCheck console for details.`, 
+                            'error'
+                        );
+                    }
+                }
+            };
+            
+            try {
+                let trackingSuccess = false;
+                
+                if (navigator.sendBeacon) {
+                    try {
+                        trackingSuccess = navigator.sendBeacon(
+                            `${baseUrl}/track_click.php`, 
+                            new Blob([trackData], { type: 'application/json' })
+                        );
+                        console.log('sendBeacon result:', trackingSuccess);
+                    } catch (beaconError) {
+                        console.warn('sendBeacon failed:', beaconError);
+                        trackingSuccess = false;
+                    }
+                }
+                
+                if (trackingSuccess) {
+                    tracked = true;
+                    updateResult('realClickResult', 
+                        `✅ Click tracked via sendBeacon!\n\nOpening Spotify...`, 
+                        'success'
+                    );
+                    openLink();
+                } else {
+                    const fallbackTimer = setTimeout(() => {
+                        if (!tracked) {
+                            trackingFailed = true;
+                            doOpen();
+                        }
+                    }, 500);
+                    
+                    fetch(`${baseUrl}/track_click.php`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: trackData
+                    })
+                    .then(response => {
+                        console.log('Fetch response status:', response.status);
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Click tracking response:', data);
+                        if (data.success) {
+                            clearTimeout(fallbackTimer);
+                            tracked = true;
+                            updateResult('realClickResult', 
+                                `✅ Click tracked successfully!\n\nClick ID: ${data.click_id}\nOpening Spotify...`, 
+                                'success'
+                            );
+                            openLink();
+                        } else {
+                            throw new Error('Tracking failed');
+                        }
+                    })
+                    .catch(fetchError => {
+                        console.warn('Fetch tracking failed:', fetchError);
+                        clearTimeout(fallbackTimer);
+                        trackingFailed = true;
+                        doOpen();
+                    });
+                }
+            } catch (error) {
+                console.error('Click tracking error:', error);
+                trackingFailed = true;
+                doOpen();
+            }
+        }
+
+        function showDiagnostics() {
+            const diagnostics = {
+                userAgent: navigator.userAgent,
+                language: navigator.language,
+                platform: navigator.platform,
+                cookiesEnabled: navigator.cookieEnabled,
+                sendBeaconSupported: typeof navigator.sendBeacon === 'function',
+                currentUrl: window.location.href,
+                apiBaseUrl: document.getElementById('apiBaseUrl').value,
+                timestamp: new Date().toISOString()
+            };
+            
+            updateResult('diagnosticsResult', 
+                `🔍 System Diagnostics:\n\n${JSON.stringify(diagnostics, null, 2)}`, 
+                'info'
+            );
+        }
+
+        // Auto-test on page load
+        window.addEventListener('load', () => {
+            console.log('Click Tracking Test Tool loaded');
+            console.log('API Base URL:', API_BASE_URL);
+        });
+    </script>
+</body>
+</html>

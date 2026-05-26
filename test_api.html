@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test - Leirad Artist</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #09090b;
+            color: #fff;
+            padding: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background: #18181b;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #10b981;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #a1a1aa;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        .test-input {
+            width: 100%;
+            padding: 12px;
+            background: #09090b;
+            border: 1px solid #27272a;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        .test-button {
+            padding: 12px 24px;
+            background: #10b981;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            margin-right: 10px;
+        }
+        .test-button:hover {
+            background: #059669;
+        }
+        .result {
+            background: #09090b;
+            border: 1px solid #27272a;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 15px;
+            font-family: monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .success {
+            color: #10b981;
+        }
+        .error {
+            color: #ef4444;
+        }
+        .info {
+            color: #3b82f6;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 API Endpoint Test</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: Check API Base URL</h2>
+        <p>Current API Base URL: <code id="apiUrl"></code></p>
+        <button class="test-button" onclick="testBaseUrl()">Test Base URL</button>
+        <div id="baseUrlResult" class="result" style="display:none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Get Release by Shortcode</h2>
+        <input type="text" id="shortcodeInput" class="test-input" placeholder="Enter release shortcode (e.g., abc123)">
+        <button class="test-button" onclick="testGetRelease()">Test Get Release</button>
+        <div id="releaseResult" class="result" style="display:none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: CORS Check</h2>
+        <button class="test-button" onclick="testCORS()">Test CORS</button>
+        <div id="corsResult" class="result" style="display:none;"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'https://blandolms.ccsblock2.com/backend/api';
+        document.getElementById('apiUrl').textContent = API_BASE_URL;
+
+        async function testBaseUrl() {
+            const resultDiv = document.getElementById('baseUrlResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<span class="info">Testing...</span>';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/get_home.php`);
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `<span class="success">✓ Success!</span>\nStatus: ${response.status}\nResponse:\n${JSON.stringify(data, null, 2)}`;
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">✗ Error!</span>\n${error.message}`;
+            }
+        }
+
+        async function testGetRelease() {
+            const shortcode = document.getElementById('shortcodeInput').value.trim();
+            const resultDiv = document.getElementById('releaseResult');
+            
+            if (!shortcode) {
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = '<span class="error">Please enter a shortcode</span>';
+                return;
+            }
+
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<span class="info">Testing...</span>';
+
+            try {
+                const url = `${API_BASE_URL}/get_release.php?s=${shortcode}`;
+                console.log('Fetching:', url);
+                
+                const response = await fetch(url);
+                console.log('Response Status:', response.status);
+                
+                const data = await response.json();
+                console.log('Response Data:', data);
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `<span class="success">✓ Success!</span>\nStatus: ${response.status}\nRelease Found:\n${JSON.stringify(data.data, null, 2)}`;
+                } else {
+                    resultDiv.innerHTML = `<span class="error">✗ API returned error</span>\nStatus: ${response.status}\nError: ${data.error}\nFull Response:\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">✗ Fetch Error!</span>\n${error.message}\n\nCheck browser console for details.`;
+                console.error('Fetch error:', error);
+            }
+        }
+
+        async function testCORS() {
+            const resultDiv = document.getElementById('corsResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<span class="info">Testing CORS...</span>';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/get_home.php`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const corsHeaders = {
+                    'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
+                    'Access-Control-Allow-Methods': response.headers.get('Access-Control-Allow-Methods'),
+                    'Access-Control-Allow-Headers': response.headers.get('Access-Control-Allow-Headers'),
+                };
+                
+                resultDiv.innerHTML = `<span class="success">✓ CORS Headers:</span>\n${JSON.stringify(corsHeaders, null, 2)}`;
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">✗ CORS Error!</span>\n${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
